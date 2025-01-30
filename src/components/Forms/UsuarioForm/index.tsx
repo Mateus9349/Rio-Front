@@ -1,15 +1,15 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-import { IUsuario } from "../../../interfaces/user.interface";
+import { IUser } from "../../../interfaces/user.interface";
 import styles from "./UsuarioForm.module.scss"; // Importando o SCSS
 
 interface UsuarioFormProps {
-    initialData?: IUsuario;
-    onSubmit: (data: IUsuario) => void;
+    initialData?: IUser;
+    onSubmit: (data: IUser) => void;
 }
 
 export const UsuarioForm: React.FC<UsuarioFormProps> = ({ initialData, onSubmit }) => {
-    const { register, handleSubmit } = useForm<IUsuario>({ defaultValues: initialData });
+    const { register, handleSubmit } = useForm<IUser>({ defaultValues: initialData });
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className={styles.formContainer}>
