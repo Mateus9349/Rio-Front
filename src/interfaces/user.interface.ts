@@ -1,12 +1,12 @@
-export interface IUsuario {
+export interface IUser {
     id: string;
     nome: string;
-    email: string;
-    senhaHash: string;
-    permissoes: string[];
+    email?: string;
+    senhaHash?: string;
+    permissoes?: string[];
 }
 
-export const usuariosMock: IUsuario[] = [
+export const usuariosMock: IUser[] = [
     {
         id: "1",
         nome: "Admin",
