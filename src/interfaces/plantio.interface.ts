@@ -1,5 +1,5 @@
 export interface IPlantio {
-    id: string;
+    id?: string;
     clienteId: string;
     safId: string;
     comunidadeId: string;

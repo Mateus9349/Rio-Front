@@ -1,5 +1,5 @@
 export interface IComunidade {
-    id: string;
+    id?: string;
     nome: string;
 }
 

@@ -1,5 +1,5 @@
 export interface ISAF {
-    id: string;
+    id?: string;
     identificacao: string;
     latitude: number;
     longitude: number;

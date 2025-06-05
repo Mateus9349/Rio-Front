@@ -1,22 +1,19 @@
-import { useNavigate } from "react-router-dom";
 import Banner from "../../components/Banner";
-import styles from "./Home.module.scss"; // Importando o SCSS
+import BotaoHome from "../../components/BotaoHome/BotaoHome";
+import styles from "./Home.module.scss";
 
 export default function Home() {
-    const navigate = useNavigate();
-
     return (
         <main className={styles.homeContainer}>
             <Banner />
 
             <div className={styles.buttonsContainer}>
-                <button className={styles.navButton} onClick={() => navigate('/cadastros')}>
-                    Cadastros
-                </button>
-
-                <button className={styles.navButton} onClick={() => navigate('/plantio')}>
-                    Plantio
-                </button>
+                <BotaoHome title="Registrar Plantio" href="/registrarPlantio"/>
+                <BotaoHome title="Clientes" href="/Clientes"/>
+                <BotaoHome title="SAFs" href="/SAFs" />
+                <BotaoHome title="Comunidades" href="/Comunidades"/>
+                <BotaoHome title="Proprietarios" href="/Proprietarios"/>
+                <BotaoHome title="Plantios" href="/plantios"/>
             </div>
         </main>
     );

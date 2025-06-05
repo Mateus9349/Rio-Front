@@ -1,5 +1,5 @@
 export interface IProprietario {
-    id: string;
+    id?: string;
     nome: string;
     telefone?: string;
     email?: string;

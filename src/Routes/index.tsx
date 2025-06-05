@@ -4,9 +4,12 @@ import PrivateRoute from "../context/routes";
 
 import Login from "../pages/Login";
 import Home from "../pages/Home";
-import InserirDados from "../pages/InserirDados";
-import Cadastros from "../pages/Cadastros";
-import Plantio from "../pages/Plantio";
+import RegistrarPlantioScreen from "../pages/RegistrarPlantiosScreen";
+import Clientes from "../pages/Clientes";
+import Comunidades from "../pages/Comunidades";
+import Proprietarios from "../pages/Proprietarios";
+import SAFs from "../pages/SAFs";
+import Plantios from "../pages/Plantios";
 
 const Rotas = () => (
   <AuthProvider>
@@ -18,9 +21,12 @@ const Rotas = () => (
         {/* Rota privada */}
         <Route element={<PrivateRoute />}>
           <Route path="/home" element={<Home />} />
-          <Route path="/inserir" element={<InserirDados />} />
-          <Route path="/cadastros" element={<Cadastros />} />
-          <Route path="/plantio" element={<Plantio />} />
+          <Route path="/registrarPlantio" element={<RegistrarPlantioScreen />} />
+          <Route path="/Clientes" element={<Clientes />} />
+          <Route path="/Comunidades" element={<Comunidades />} />
+          <Route path="/Proprietarios" element={<Proprietarios />} />
+          <Route path="/SAFs" element={<SAFs />} />
+          <Route path="/plantios" element={<Plantios />} />
         </Route>
       </Routes>
     </BrowserRouter>
