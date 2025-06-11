@@ -22,7 +22,7 @@ export default function TabelaPlantios({ dados, recarrega }: Props) {
   const { plantios, loadingPlantios, recarregarPlantios } = usePlantios();
   const [statusCadastro, setStatusCadastro] = useState<(boolean | "aguardando")[]>([]);
   const [plantioSelecionado, setPlantioSelecionado] = useState<IPlantioCompleto | null>(null);
-  const [contador, setContador] = useState(0);
+  const [contador] = useState(0);
 
   const gerarChave = (
     clienteId: string,

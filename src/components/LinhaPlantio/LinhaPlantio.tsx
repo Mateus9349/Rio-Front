@@ -1,3 +1,4 @@
+// File: components/LinhaPlantio.tsx
 import { IPlantioCompleto } from "../../interfaces/plantioCompleto.interface";
 
 interface Props {
@@ -21,16 +22,12 @@ export default function LinhaPlantio({ plantio, status, onCadastrar }: Props) {
             <td className="border px-4 py-2">{plantio.Comunidade}</td>
             <td className="border px-4 py-2">{plantio.Proprietario_Responsavel}</td>
             <td className="border px-4 py-2">
-                {status === "aguardando"
-                    ? "⏳ Aguardando IDs"
-                    : status === "verificando"
-                        ? "🔍 Verificando..."
-                        : status
-                            ? "✅ Cadastrado"
-                            : "🟡 Não cadastrado"}
+                {status === "aguardando" && "⏳ Aguardando IDs"}
+                {status === "verificando" && "🔍 Verificando..."}
+                {typeof status === "boolean" && (status ? "✅ Cadastrado" : "🟡 Não cadastrado")}
             </td>
             <td className="border px-4 py-2">
-                {!status && status !== "aguardando" && (
+                {typeof status === "boolean" && !status && (
                     <button
                         onClick={() => onCadastrar?.(plantio)}
                         className="bg-blue-600 text-white px-3 py-1 rounded"

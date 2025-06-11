@@ -101,8 +101,6 @@ export default function Mapa() {
                 <div className="w-full md:w-[30%]">
                     <p className="text-lg font-semibold mb-2">CO² Neutro Idesam</p>
 
-
-
                     {clienteId ? (
                         <SectionDetalhesCliente
                             id={clienteId}
@@ -111,7 +109,7 @@ export default function Mapa() {
                     ) : (
                         <>
                             <SomaDeDados totais={totais} />
-                            
+
                             <SectionClientes
                                 clientes={clientesFiltrados}
                                 plantios={plantiosFiltrados}

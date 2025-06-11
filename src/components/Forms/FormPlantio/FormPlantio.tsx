@@ -18,7 +18,7 @@ interface FormPlantioProps {
 }
 
 export default function FormPlantio({ plantio, onVerificacaoFinalizada }: FormPlantioProps) {
-    const [dados, setDados] = useState<IPlantioCompleto>(() => ({
+    const [dados] = useState<IPlantioCompleto>(() => ({
         ...plantio,
         Cliente: normalizar(plantio.Cliente),
         Comunidade: normalizar(plantio.Comunidade),
@@ -38,7 +38,6 @@ export default function FormPlantio({ plantio, onVerificacaoFinalizada }: FormPl
     const {
         criarPlantio,
         resetStatus,
-        loadingPlantio,
         errorPlantio,
         plantioCriado,
     } = useCriaPlantio();

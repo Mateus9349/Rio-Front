@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import { IPlantioCompleto } from "../../interfaces/plantioCompleto.interface";
 
@@ -7,8 +6,8 @@ interface Props {
 }
 
 const ExcelUploader: React.FC<Props> = ({ retornaDados }) => {
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [data, setData] = useState<any[]>([]);
+  /* const [headers, setHeaders] = useState<string[]>([]);
+  const [data, setData] = useState<any[]>([]); */
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -28,7 +27,7 @@ const ExcelUploader: React.FC<Props> = ({ retornaDados }) => {
 
       // Ajuste: remover colunas vazias no início
       const correctedHeaders = jsonData[0].filter((header: any) => header);
-      setHeaders(correctedHeaders);
+      /* setHeaders(correctedHeaders); */
 
       // Ajuste: pegar apenas as colunas existentes
       const parsedData: IPlantioCompleto[] = jsonData.slice(1).map((row) =>
@@ -38,7 +37,7 @@ const ExcelUploader: React.FC<Props> = ({ retornaDados }) => {
         }, {} as Record<string, any>)
       );
 
-      setData(parsedData);
+      /* setData(parsedData); */
       retornaDados(parsedData);
     };
 
