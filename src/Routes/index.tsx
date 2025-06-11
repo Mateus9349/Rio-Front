@@ -10,13 +10,15 @@ import Comunidades from "../pages/Comunidades";
 import Proprietarios from "../pages/Proprietarios";
 import SAFs from "../pages/SAFs";
 import Plantios from "../pages/Plantios";
+import Mapa from "../pages/Mapa";
 
 const Rotas = () => (
   <AuthProvider>
     <BrowserRouter>
       <Routes>
         {/* Rota pública */}
-        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Mapa />} />
 
         {/* Rota privada */}
         <Route element={<PrivateRoute />}>

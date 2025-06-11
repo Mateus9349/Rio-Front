@@ -2,11 +2,11 @@ import React, { useContext, useState } from 'react';
 import styles from './Login.module.scss';
 import { AuthContext } from '../../context/authContext';
 import { useNavigate } from 'react-router-dom';
+import { UserService } from '../../services/User.service';
 
 export default function Login() {
     const authContext = useContext(AuthContext);
 
-    // Verifica se o contexto está definido
     if (!authContext) {
         throw new Error('AuthContext deve ser usado dentro de um AuthProvider');
     }
@@ -16,23 +16,28 @@ export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleLogin = (e: React.FormEvent) => {
-        e.preventDefault(); // Previne o comportamento padrão do formulário
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
         if (!username || !password) {
             setError('Por favor, preencha todos os campos.');
             return;
         }
 
-        // Simula o login com os dados do usuário
-        const userData = {
-            id: '1', // Substitua por um valor real, se necessário
-            nome: username,
-        };
+        setLoading(true);
 
-        login(userData);
-        setError('');
-        navigate('/home');
+        try {
+            const userData = await UserService.login(username, password);
+            login(userData);
+            navigate('/home');
+        } catch (err: any) {
+            setError(err.message || 'Erro ao fazer login');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -46,6 +51,7 @@ export default function Login() {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
+                        disabled={loading}
                     />
                     <input
                         type="password"
@@ -53,8 +59,11 @@ export default function Login() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        disabled={loading}
                     />
-                    <button type="submit">Entrar</button>
+                    <button type="submit" disabled={loading}>
+                        {loading ? 'Verificando...' : 'Entrar'}
+                    </button>
                     {error && <p className={styles.error}>{error}</p>}
                 </form>
             </div>

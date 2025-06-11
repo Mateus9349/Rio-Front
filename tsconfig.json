@@ -1,13 +1,18 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "skipLibCheck": true,
-
+    "types": [
+      "@emotion/react"
+    ],
     /* JSX Support */
     "jsx": "react-jsx",
-
     /* Resolução de Módulos */
     "moduleResolution": "node",
     "allowImportingTsExtensions": true,
@@ -15,16 +20,20 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-
     /* Linting e Segurança */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-
     /* Controle de Emissão */
     "noEmit": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src",
+    "src/types"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

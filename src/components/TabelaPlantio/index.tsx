@@ -33,7 +33,8 @@ export default function TabelaPlantios({ dados, recarrega }: Props) {
     tCO2: number,
     arvores: number,
     area: number
-  ) => `${clienteId}-${safId}-${comunidadeId}-${proprietarioId}-${ano}-${tCO2}-${arvores}-${area}`;
+  ) =>
+    `${clienteId}-${safId}-${comunidadeId}-${proprietarioId}-${ano}-${Number(tCO2).toFixed(2)}-${arvores}-${Number(area).toFixed(2)}`;
 
   useEffect(() => {
     if (!safs.length || !comunidades.length || !proprietarios.length || !plantios.length) return;
@@ -46,9 +47,9 @@ export default function TabelaPlantios({ dados, recarrega }: Props) {
         p.comunidade.id,
         p.proprietario.id,
         p.anoCompensacao,
-        Number(p.tCO2Compensadas),
+        Number(p.tCO2Compensadas || 0),
         p.numeroArvores,
-        Number(p.areaM2)
+        Number(p.areaM2 || 0)
       );
       mapCadastrados.set(key, true);
     });
@@ -67,7 +68,7 @@ export default function TabelaPlantios({ dados, recarrega }: Props) {
         plantio.Ano,
         Number(plantio.tCO2compensadas || 0),
         plantio.Arvores,
-        plantio.Area_m2
+        Number(plantio.Area_m2 || 0)
       );
       return mapCadastrados.has(chave);
     });

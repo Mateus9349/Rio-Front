@@ -6,7 +6,6 @@ import { normalizar } from "../../../utils/funcoes";
 import PlantioService from "../../../services/PlantioService";
 import useCriaPlantio from "../../../hooks/plantio/usecriaPlantio";
 import StatusDoPlantio from "../../StatusDoPlantio";
-import PlantioButtons from "../../PlantiosButtons";
 import ClientPart from "../../Parts/ClientePart";
 import SAFPart from "../../Parts/SAFPart";
 import ComunidadePart from "../../Parts/ComunidadePart";

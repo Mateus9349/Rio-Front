@@ -1,14 +1,23 @@
 import { ICliente } from "../../../interfaces/cliente.interface";
+import IMAGEM_PADRAO from '../../../assets/img/eu-sou-exibicao-masculino.png';
 
-interface Props {
+interface CardClienteProps {
     cliente: ICliente;
 }
 
-export default function CardCliente({ cliente }: Props) {
+export default function CardCliente({ cliente }: CardClienteProps) {
+    const imagem = cliente.imagem && cliente.imagem.trim() !== "" ? cliente.imagem : IMAGEM_PADRAO;
+
     return (
-        <div className="bg-white rounded-2xl shadow-md p-5 mb-4 w-full max-w-md border border-gray-200">
-            <h3 className="text-xl font-semibold text-gray-800">{cliente.nome}</h3>
-            <p className="text-sm text-gray-600"><strong>ID:</strong> {cliente.id}</p>
+        <div className="bg-white p-4 rounded shadow flex flex-col items-center text-center">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 mb-3">
+                <img
+                    src={imagem}
+                    alt={cliente.nome}
+                    className="w-full h-full object-cover"
+                />
+            </div>
+            <p className="text-gray-800 font-medium">{cliente.nome}</p>
         </div>
     );
 }

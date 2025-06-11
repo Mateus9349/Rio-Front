@@ -68,6 +68,10 @@ export default function RegistrarPlantioScreen() {
         onVerificacaoFinalizada={(ok) => setVerificacaoLiberada(ok)}
       />
 
+      <h1 className="text-2xl font-bold mb-6 text-center">
+        Indice {indexAtual} de {dadosDoPlantio.length}
+      </h1>
+
       <div className="mt-4 flex justify-between">
         <button
           onClick={handleAnterior}
