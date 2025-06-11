@@ -1,3 +1,4 @@
+import styles from '../styles/Mapa.module.scss';
 import { useMemo, useState } from 'react';
 import usePlantios from '../hooks/plantio/usePlantios';
 import useClientes from '../hooks/clientes/useClientes';
@@ -6,6 +7,8 @@ import { MapaSAFs } from '../components/MapaSAFs/MapaSAFs';
 import SectionClientes from '../components/SectionClientes/SectionClientes';
 import SomaDeDados from '../components/SomaDeDados/SomaDeDados';
 import SectionDetalhesCliente from '../components/SectionDetalhesCliente/SectionDetalhesCliente';
+import CabecalhoMapa from '../components/CabecalhoMapa/CabecalhoMapa';
+import imagemIdesam from '../assets/img/CO2.png';
 
 export default function Mapa() {
     const { plantios } = usePlantios();
@@ -61,35 +64,22 @@ export default function Mapa() {
     }, [plantiosFiltrados]);
 
     return (
-        <main className="p-6 space-y-6">
-            <header>
-                <h1 className="text-2xl font-bold">Mapa de Plantio</h1>
-            </header>
+        <main className="space-y-6">
+            
+            <CabecalhoMapa />
 
-            <section className="text-gray-700 space-y-2">
-                <p>
-                    Mapa de Plantio dos parceiros do Programa Carbono Neutro Idesam. O plantio é realizado na
-                    Reserva de Desenvolvimento Sustentável do Uatumã (Amazonas) em Sistemas Agroflorestais.
-                </p>
-                <p>
-                    Na categoria de compensação das emissões de carbono, acesse sua área específica,
-                    inserindo o código informado no seu certificado.
-                </p>
-            </section>
-
-            {/* Input + botão de limpar */}
-            <div className="flex items-center gap-2 mb-4">
+            <div className={styles.container}>
                 <input
                     type="text"
-                    placeholder="Informe o código do cliente"
+                    placeholder="Insira o código infromado no seu certificado"
                     value={clienteId}
                     onChange={(e) => setClienteId(e.target.value)}
-                    className="border p-2 rounded w-full md:w-1/3 uppercase"
+                    className={styles.input}
                 />
                 {clienteId && (
                     <button
                         onClick={() => setClienteId('')}
-                        className="text-sm text-blue-600 hover:underline"
+                        className={styles.btn}
                     >
                         Limpar
                     </button>
@@ -99,7 +89,7 @@ export default function Mapa() {
             <section className="flex flex-col md:flex-row gap-6">
                 {/* Painel lateral */}
                 <div className="w-full md:w-[30%]">
-                    <p className="text-lg font-semibold mb-2">CO² Neutro Idesam</p>
+                    <img src={imagemIdesam} alt="" style={{justifySelf: 'center'}}/>
 
                     {clienteId ? (
                         <SectionDetalhesCliente

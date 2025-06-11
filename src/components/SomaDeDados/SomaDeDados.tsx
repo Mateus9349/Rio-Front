@@ -8,33 +8,33 @@ interface Props {
 
 export default function SomaDeDados({ totais }: Props) {
     return (
-        <div className="grid grid-cols-1 gap-4 text-center mb-6">
-            <div className="bg-white p-4 rounded shadow">
+        <div className="bg-blue-600 text-white rounded-xl p-6 shadow-lg flex flex-wrap justify-between gap-4 text-center">
+            <div className="flex-1 min-w-[150px]">
                 <h2 className="text-2xl font-bold">
                     {totais.arvores.toLocaleString('pt-BR')}
                 </h2>
-                <h3 className="text-sm text-gray-600">Árvores Plantadas</h3>
+                <h3 className="text-sm">Árvores Plantadas</h3>
             </div>
 
-            <div className="bg-white p-4 rounded shadow">
+            <div className="flex-1 min-w-[150px]">
                 <h2 className="text-2xl font-bold">
                     {totais.carbono.toLocaleString('pt-BR', {
                         minimumFractionDigits: 2,
                     })}{' '}
-                    t
+                    TCO²
                 </h2>
-                <h3 className="text-sm text-gray-600">Emissões Compensadas</h3>
+                <h3 className="text-sm">Emissões Compensadas</h3>
             </div>
 
-            <div className="bg-white p-4 rounded shadow">
+            <div className="flex-1 min-w-[150px]">
                 <h2 className="text-2xl font-bold">
                     {totais.area.toLocaleString('pt-BR', {
                         minimumFractionDigits: 2,
                     })}{' '}
-                    ha
+                    M²
                 </h2>
-                <h3 className="text-sm text-gray-600">Área Reflorestada</h3>
+                <h3 className="text-sm">Área Reflorestada</h3>
             </div>
         </div>
-    )
+    );
 }
