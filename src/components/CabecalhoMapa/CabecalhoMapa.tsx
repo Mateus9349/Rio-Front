@@ -6,7 +6,7 @@ export default function CabecalhoMapa() {
                 <h1 className="text-3xl font-bold mb-6">Mapa de Plantio</h1>
                 <div className="bg-white text-gray-700 rounded-md px-6 py-4 shadow-md">
                     <p className="mb-2">
-                        Mapa de Plantio dos parceiros do Programa Carbono Neutro Idesam nos anos 2010 a 2022.
+                        Mapa de Plantio dos parceiros do Programa Carbono Neutro Idesam.
                         O plantio é realizado na Reserva de Desenvolvimento Sustentável do Uatumã (Amazonas)
                         em Sistemas Agroflorestais.
                     </p>
