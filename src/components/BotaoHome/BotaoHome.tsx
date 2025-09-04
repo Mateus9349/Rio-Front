@@ -10,7 +10,7 @@ export default function BotaoHome({ title, href }: Props) {
 
     return (
         <button
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mx-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-2xl shadow-2xl mx-2 transition-all duration-300 cursor-pointer"
             onClick={() => navigate(href)}
         >
             {title}

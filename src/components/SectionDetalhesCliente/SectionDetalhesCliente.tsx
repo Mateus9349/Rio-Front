@@ -46,6 +46,22 @@ export default function SectionDetalhesCliente({ id, plantios }: Props) {
         });
     }, [cliente, plantios]);
 
+    const clienteComImagem: ICliente | null = useMemo(() => {
+        if (!cliente) return null;
+
+        const nomeCliente = normalizarTexto(cliente.nome);
+
+        const clienteImagemValida = plantios
+            .map(p => p.cliente as ICliente)
+            .find(c =>
+                normalizarTexto(c.nome) === nomeCliente &&
+                c.imagem &&
+                c.imagem.trim() !== ""
+            );
+
+        return clienteImagemValida || cliente;
+    }, [cliente, plantios]);
+
     const anosDisponiveis = useMemo(() => {
         const anos = plantiosDoCliente
             .map(p => p.anoCompensacao)
@@ -78,19 +94,17 @@ export default function SectionDetalhesCliente({ id, plantios }: Props) {
         );
     }, [plantiosFiltrados]);
 
-    if (!cliente) {
+    if (!clienteComImagem) {
         return <p>Carregando informações do cliente...</p>;
     }
 
     return (
-        <div className="space-y-4">
-            <SomaDeDados totais={totais} />
-
-            <CardCliente cliente={cliente} />
+        <div className="space-y-4 flex flex-col items-center">
+            <CardCliente cliente={clienteComImagem} />
 
             {anosDisponiveis.length > 0 && (
                 <select
-                    className="border p-2 rounded w-full mb-2"
+                    className="border p-2 rounded w-full mb-2 cursor-pointer"
                     value={anoSelecionado}
                     onChange={(e) =>
                         setAnoSelecionado(e.target.value === "TODOS" ? "TODOS" : Number(e.target.value))
@@ -104,6 +118,8 @@ export default function SectionDetalhesCliente({ id, plantios }: Props) {
                     ))}
                 </select>
             )}
+
+            <SomaDeDados totais={totais} />
         </div>
     );
 }

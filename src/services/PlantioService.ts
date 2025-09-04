@@ -14,7 +14,7 @@ const PlantioService = {
   /**
    * Obtém um plantio específico pelo ID.
    */
-  async buscarPlantio(id: string): Promise<IPlantio> {
+  async buscarPlantio(id: string): Promise<IPlantioBack> {
     const response = await api.get(`/plantios/${id}`);
     return response.data;
   },

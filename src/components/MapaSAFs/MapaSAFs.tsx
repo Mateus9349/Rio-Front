@@ -1,24 +1,48 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polygon } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polygon, useMap } from 'react-leaflet';
 import { ISAF } from '../../interfaces/SAF.interface';
 import { DefaultIcon } from '../../utils/leafletIcon';
 
 interface MapaSAFsProps {
     safs: ISAF[];
+    onSafClick?: (saf: ISAF) => void; // <- callback opcional
 }
 
-// Centro aproximado da RDS Uatumã
 const centroReserva: [number, number] = [-2.5, -58.7];
-
-// Limites aproximados para representar a RDS
 const reservaBounds: [number, number][] = [
-    [-2.10, -59.40], // Noroeste
-    [-2.10, -58.05], // Nordeste
-    [-2.90, -58.05], // Sudeste
-    [-2.90, -59.40], // Sudoeste
+    [-2.10, -59.40],
+    [-2.10, -58.05],
+    [-2.90, -58.05],
+    [-2.90, -59.40],
 ];
 
-export const MapaSAFs: React.FC<MapaSAFsProps> = ({ safs }) => {
+// Componente interno para ter acesso ao map via hook
+function MarkerWithAction({ saf, onSafClick }: { saf: ISAF; onSafClick?: (saf: ISAF) => void }) {
+    const map = useMap();
+
+    return (
+        <Marker
+            position={[saf.latitude, saf.longitude]}
+            icon={DefaultIcon}
+            eventHandlers={{
+                click: () => {
+                    // 1) dispara ação pro pai
+                    onSafClick?.(saf);
+                    // 2) centraliza e aproxima no ponto
+                    map.flyTo([saf.latitude, saf.longitude], 14, { duration: 0.6 });
+                },
+            }}
+        >
+            <Popup>
+                <strong>{saf.identificacao}</strong><br />
+                Lat: {saf.latitude}<br />
+                Long: {saf.longitude}
+            </Popup>
+        </Marker>
+    );
+}
+
+export const MapaSAFs: React.FC<MapaSAFsProps> = ({ safs, onSafClick }) => {
     return (
         <div className="w-full h-[500px] rounded-xl overflow-hidden shadow-lg border border-gray-200">
             <MapContainer center={centroReserva} zoom={9} className="h-full w-full">
@@ -27,31 +51,16 @@ export const MapaSAFs: React.FC<MapaSAFsProps> = ({ safs }) => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
-                {/* Traçado da RDS sem preenchimento */}
                 <Polygon
                     positions={reservaBounds}
-                    pathOptions={{
-                        color: 'green',
-                        weight: 2,
-                        fillOpacity: 0,
-                        dashArray: '6 6'
-                    }}
+                    pathOptions={{ color: 'green', weight: 2, fillOpacity: 0, dashArray: '6 6' }}
                 />
 
-                {safs.map((saf, index) => (
-                    <Marker
-                        key={`${saf.id}-${saf.latitude}-${saf.longitude}-${index}`}
-                        position={[saf.latitude, saf.longitude]}
-                        icon={DefaultIcon}
-                    >
-                        <Popup>
-                            <strong>{saf.identificacao}</strong><br />
-                            Lat: {saf.latitude}<br />
-                            Long: {saf.longitude}
-                        </Popup>
-                    </Marker>
+                {safs.map((saf) => (
+                    <MarkerWithAction key={saf.id} saf={saf} onSafClick={onSafClick} />
                 ))}
             </MapContainer>
         </div>
     );
 };
+

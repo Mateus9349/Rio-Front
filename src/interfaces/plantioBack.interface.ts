@@ -4,6 +4,7 @@ export interface IPlantioBack {
     tCO2Compensadas: number | string;
     numeroArvores: number;
     areaM2: number | string;
+    imagens?: string[];
 
     cliente: {
         id: string;
@@ -15,6 +16,7 @@ export interface IPlantioBack {
         identificacao: string;
         latitude?: string;
         longitude?: string;
+        imagens?: string[];
     };
 
     comunidade: {

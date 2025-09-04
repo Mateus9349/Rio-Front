@@ -3,6 +3,7 @@ export interface ISAF {
     identificacao: string;
     latitude: number;
     longitude: number;
+    imagens?: string[];
 }
 
 export const safsMock: ISAF[] = [

@@ -1,26 +1,43 @@
 import { ICliente } from "../../../interfaces/cliente.interface";
-import IMAGEM_PADRAO from '../../../assets/img/eu-sou-exibicao-masculino.png';
+import IMAGEM_PADRAO from "../../../assets/img/eu-sou-exibicao-masculino.png";
+import styles from './CardCliente.module.scss';
 
 interface CardClienteProps {
     cliente: ICliente;
 }
 
+function extrairIdDrive(url: string): string | null {
+    const match = url.match(/\/file\/d\/(.*?)\//);
+    return match ? match[1] : null;
+}
+
 export default function CardCliente({ cliente }: CardClienteProps) {
     const imagem = cliente.imagem && cliente.imagem.trim() !== "" ? cliente.imagem : IMAGEM_PADRAO;
-
-    // Remove qualquer texto entre parênteses e espaços extras
     const nomeLimpo = cliente.nome.replace(/\s*\(.*?\)\s*/g, "").trim();
 
+    const isGoogleDrive = imagem.includes("drive.google.com");
+    const driveId = isGoogleDrive ? extrairIdDrive(imagem) : null;
+    const driveUrl = driveId ? `https://drive.google.com/file/d/${driveId}/preview` : null;
+
     return (
-        <div className="bg-white p-4 rounded shadow flex flex-col items-center text-center">
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 mb-3">
+        <div className={styles.container}>
+            {driveUrl ? (
+                <iframe
+                    src={driveUrl}
+                    title={nomeLimpo}
+                    className={styles.img}
+                    allow="autoplay"
+                />
+            ) : (
                 <img
                     src={imagem}
                     alt={nomeLimpo}
-                    className="w-full h-full object-cover"
+                    className={styles.img}
                 />
-            </div>
-            <p className="text-gray-800 font-medium">{nomeLimpo}</p>
+            )}
+
+            <p className={styles.text}>{nomeLimpo}</p>
+            <h1>{cliente.id}</h1>
         </div>
     );
 }

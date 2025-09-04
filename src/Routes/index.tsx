@@ -24,11 +24,11 @@ const Rotas = () => (
         <Route element={<PrivateRoute />}>
           <Route path="/home" element={<Home />} />
           <Route path="/registrarPlantio" element={<RegistrarPlantioScreen />} />
-          <Route path="/Clientes" element={<Clientes />} />
-          <Route path="/Comunidades" element={<Comunidades />} />
-          <Route path="/Proprietarios" element={<Proprietarios />} />
-          <Route path="/SAFs" element={<SAFs />} />
-          <Route path="/plantios" element={<Plantios />} />
+          <Route path="/ClientesScreen" element={<Clientes />} />
+          <Route path="/ComunidadesScreen" element={<Comunidades />} />
+          <Route path="/ProprietariosScreen" element={<Proprietarios />} />
+          <Route path="/SAFsScreen" element={<SAFs />} />
+          <Route path="/PlantiosScreen" element={<Plantios />} />
         </Route>
       </Routes>
     </BrowserRouter>

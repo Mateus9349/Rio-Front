@@ -1,0 +1,22 @@
+.container {
+    background-color: #5a5a5a;
+    height: 40vh;
+    box-sizing: border-box;
+
+    div { 
+        position: relative;
+        top: 20%;
+        left: 10%;
+        max-width: fit-content;
+
+        .img {
+            width: 250px;
+            height: 80px;
+            margin-top: 85px;
+        }
+
+        ul {
+            display: flex;
+        }
+    }
+}

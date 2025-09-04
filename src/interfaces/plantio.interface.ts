@@ -8,6 +8,7 @@ export interface IPlantio {
     tCO2Compensadas: number;
     numeroArvores: number;
     areaM2: number;
+    imagens?: string[];
 }
 
 export const plantiosMock: IPlantio[] = [

@@ -1,5 +1,5 @@
  .container {
-     margin: 15px;
+     margin: 15px 15px 15px 85px;
      display: flex;
      justify-content: flex-start;
      align-items: center;
@@ -8,7 +8,7 @@
      .input {
          text-transform: uppercase;
          padding: 0.75rem 1rem;
-         border: 1px solid #ccc;
+         border: 2px solid #19066b;
          border-radius: 8px;
          font-size: 1rem;
          transition: border-color 0.3s, box-shadow 0.3s;

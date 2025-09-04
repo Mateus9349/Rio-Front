@@ -9,11 +9,11 @@ export default function Home() {
 
             <div className={styles.buttonsContainer}>
                 <BotaoHome title="Registrar Plantio" href="/registrarPlantio"/>
-                <BotaoHome title="Clientes" href="/Clientes"/>
-                <BotaoHome title="SAFs" href="/SAFs" />
-                <BotaoHome title="Comunidades" href="/Comunidades"/>
-                <BotaoHome title="Proprietarios" href="/Proprietarios"/>
-                <BotaoHome title="Plantios" href="/plantios"/>
+                <BotaoHome title="Clientes" href="/ClientesScreen"/>
+                <BotaoHome title="SAFs" href="/SAFsScreen" />
+                <BotaoHome title="Comunidades" href="/ComunidadesScreen"/>
+                <BotaoHome title="Proprietarios" href="/ProprietariosScreen"/>
+                <BotaoHome title="Plantios" href="/PlantiosScreen"/>
             </div>
         </main>
     );
