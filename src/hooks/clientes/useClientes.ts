@@ -1,35 +1,44 @@
-import { useEffect, useState, useCallback } from "react";
-import { ICliente } from "../../interfaces/cliente.interface";
-import ClienteService from "../../services/ClienteService";
+import { useCallback, useEffect, useState } from 'react';
+import ClienteService from '../../services/ClienteService';
+import { ICliente } from '../../interfaces/cliente.interface';
 
-export default function useClientes() {
+interface UseClientesReturn {
+  clientes: ICliente[];
+  loadingClientes: boolean;
+  erroClientes: string | null;
+  refetchClientes: () => Promise<void>;
+}
+
+export function useClientes(): UseClientesReturn {
   const [clientes, setClientes] = useState<ICliente[]>([]);
-  const [loadingCliente, setLoadingCliente] = useState<boolean>(true);
-  const [erroCliente, setErroCliente] = useState<Error | null>(null);
+  const [loadingClientes, setLoadingClientes] = useState<boolean>(true);
+  const [erroClientes, setErroClientes] = useState<string | null>(null);
 
-  const refetchClientes = useCallback(async () => {
-    setLoadingCliente(true);
-    setErroCliente(null);
+  const buscarClientes = useCallback(async () => {
     try {
-      const dados = await ClienteService.listarClientes();
-      setClientes(dados);
-    } catch (erro: any) {
-      setErroCliente(erro);
+      setLoadingClientes(true);
+      setErroClientes(null);
+
+      const data = await ClienteService.listarClientes();
+      setClientes(data);
+    } catch (error: any) {
+      setErroClientes(
+        error?.response?.data?.message ||
+          'Erro ao carregar clientes.'
+      );
     } finally {
-      setLoadingCliente(false);
+      setLoadingClientes(false);
     }
   }, []);
 
   useEffect(() => {
-    refetchClientes();
-  }, [refetchClientes]);
+    buscarClientes();
+  }, [buscarClientes]);
 
   return {
     clientes,
-    loadingCliente,
-    erroCliente,
-    refetchClientes,
+    loadingClientes,
+    erroClientes,
+    refetchClientes: buscarClientes,
   };
 }
-
-

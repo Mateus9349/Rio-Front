@@ -1,40 +1,77 @@
 // RegistrarPlantioScreen.tsx
 import { useEffect, useState } from "react";
-import Banner from "../components/Banner";
-import styles from "./Home/Home.module.scss";
-import ExcelUploader from "../components/ExcelUploader";
-import TabelaPlantios from "../components/TabelaPlantio";
-import { IPlantioCompleto } from "../interfaces/plantioCompleto.interface";
-import BotaoCadastro from "../components/BotaoCadastro";
-import FormPlantio from "../components/Forms/FormPlantio/FormPlantio";
+import Banner from "../../components/Banner";
+/* import styles from "./Home/Home.module.scss"; */
+import ExcelUploader from "../../components/ExcelUploader";
+import TabelaPlantios from "../../components/TabelaPlantio";
+import { IPlantioCompleto } from "../../interfaces/plantioCompleto.interface";
+import BotaoCadastro from "../../components/BotaoCadastro";
+import FormPlantio from "../../components/Forms/FormPlantio/FormPlantio";
+import { ICertificado } from "../../interfaces/certificado.interface";
+
+const certificadoInicial: ICertificado = {
+  codigo: '',
+  ano: 0,
+  tco2Compensadas: 0,
+  arvores: 0,
+  areaM2: 0,
+  ativo: true,
+  cliente: { nome: '' },
+  saf: {
+    identificacao: '',
+    localizacao: {
+      latitude: null,
+      longitude: null,
+    },
+  },
+  comunidade: { nome: '' },
+  proprietario: { nome: '' },
+};
 
 export default function RegistrarPlantioScreen() {
-  const [dadosDoPlantio, setDadosDoPlantio] = useState<IPlantioCompleto[]>([{
-    ID_Cliente: '',
-    Cliente: '',
-    Ano: 0,
-    tCO2compensadas: 0,
-    Arvores: 0,
-    Area_m2: 0,
-    SAFs: '',
-    Coord_x: 0,
-    Coord_y: 0,
-    Comunidade: '',
-    Proprietario_Responsavel: '',
-
-    // IDs opcionais com valor inicial vazio
-    safId: '',
-    comunidadeId: '',
-    proprietarioId: '',
-  }]);
+  const [dadosDoPlantio, setDadosDoPlantio] = useState<ICertificado[]>([certificadoInicial]);
   const [indexAtual, setIndexAtual] = useState(0);
   const [menu, setMenu] = useState<'' | 'confirmacao' | 'tabela'>('');
   const [contadorAtualizacao, setContadorAtualizacao] = useState(0);
   const [verificacaoLiberada, setVerificacaoLiberada] = useState(false);
+  
+  const mapPlantioParaCertificado = (item: IPlantioCompleto): ICertificado => {
+    return {
+      codigo: item.ID_Cliente ?? '',
+      ano: Number(item.Ano) || 0,
+      tco2Compensadas: Number(item.tCO2compensadas) || 0,
+      arvores: Number(item.Arvores) || 0,
+      areaM2: Number(item.Area_m2) || 0,
+      ativo: true,
+
+      cliente: {
+        nome: item.Cliente ?? '',
+      },
+
+      saf: {
+        identificacao: item.SAFs ?? '',
+        localizacao: {
+          latitude: item.Coord_y ?? null,
+          longitude: item.Coord_x ?? null,
+        },
+      },
+
+      comunidade: {
+        nome: item.Comunidade ?? '',
+      },
+
+      proprietario: {
+        nome: item.Proprietario_Responsavel ?? '',
+      },
+    };
+  };
 
   const handleUpload = (dados: IPlantioCompleto[]) => {
     if (dados.length === 0) return;
-    setDadosDoPlantio(dados);
+
+    const certificados = dados.map(mapPlantioParaCertificado);
+
+    setDadosDoPlantio(certificados);
     setIndexAtual(0);
     setMenu('confirmacao');
   };
@@ -64,7 +101,7 @@ export default function RegistrarPlantioScreen() {
     <>
       <FormPlantio
         key={indexAtual} // força rerender limpo do form
-        plantio={dadosDoPlantio[indexAtual]}
+        certificado={dadosDoPlantio[indexAtual]}
         onVerificacaoFinalizada={(ok) => setVerificacaoLiberada(ok)}
       />
 
@@ -97,7 +134,7 @@ export default function RegistrarPlantioScreen() {
     />
   );
 
-  const renderTabela = () => (
+  /* const renderTabela = () => (
     <TabelaPlantios
       dados={dadosDoPlantio}
       recarrega={contadorAtualizacao}
@@ -112,18 +149,18 @@ export default function RegistrarPlantioScreen() {
         setMenu('tabela');
       }}
     />
-  );
+  ); */
 
   return (
-    <main className={styles.homeContainer}>
+    <main /* className={styles.homeContainer} */>
       <Banner />
       <ExcelUploader retornaDados={handleUpload} />
 
       {menu === 'confirmacao' && dadosDoPlantio.length > 0 && renderMenuConfirmacao()}
       {menu !== 'confirmacao' && dadosDoPlantio.length > 0 && renderBotaoConfirmacao()}
 
-      {menu === 'tabela' && renderTabela()}
-      {menu !== 'tabela' && dadosDoPlantio.length > 0 && renderBotaoTabela()}
+      {/* {menu === 'tabela' && renderTabela()}
+      {menu !== 'tabela' && dadosDoPlantio.length > 0 && renderBotaoTabela()} */}
     </main>
   );
 }

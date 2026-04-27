@@ -4,7 +4,7 @@ import PrivateRoute from "../context/routes";
 
 import Login from "../pages/Login";
 import Home from "../pages/Home";
-import RegistrarPlantioScreen from "../pages/RegistrarPlantiosScreen";
+import RegistrarPlantioScreen from "../pages/RegistrarPlantios/RegistrarPlantiosScreen";
 import Clientes from "../pages/Clientes";
 import Comunidades from "../pages/Comunidades";
 import Proprietarios from "../pages/Proprietarios";
@@ -28,7 +28,7 @@ const Rotas = () => (
           <Route path="/ComunidadesScreen" element={<Comunidades />} />
           <Route path="/ProprietariosScreen" element={<Proprietarios />} />
           <Route path="/SAFsScreen" element={<SAFs />} />
-          <Route path="/PlantiosScreen" element={<Plantios />} />
+          <Route path="/Plantios" element={<Plantios />} />
         </Route>
       </Routes>
     </BrowserRouter>

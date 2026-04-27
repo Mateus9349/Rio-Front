@@ -13,7 +13,7 @@ export default function Home() {
                 <BotaoHome title="SAFs" href="/SAFsScreen" />
                 <BotaoHome title="Comunidades" href="/ComunidadesScreen"/>
                 <BotaoHome title="Proprietarios" href="/ProprietariosScreen"/>
-                <BotaoHome title="Plantios" href="/PlantiosScreen"/>
+                <BotaoHome title="Plantios" href="/Plantios"/>
             </div>
         </main>
     );
