@@ -1,6 +1,6 @@
 import { useState } from "react";
 import CardCliente from "../components/Cards/CardCliente/CardCliente";
-import useClientes from "../hooks/clientes/useClientes";
+import { useClientes } from "../hooks/clientes/useClientes";
 import AdicionarImagens from "../components/AdicionarImagens/AdicionarImagens";
 import BotaoCadastro from "../components/BotaoCadastro";
 import FormAtualizaCliente from "../components/FormAtualizaCliente/FormAtualizaCliente";
@@ -11,19 +11,19 @@ type View = "list" | "edit" | "image";
 export default function Clientes() {
   const {
     clientes = [],
-    loadingCliente,
-    erroCliente,
-    refetchClientes,
+    erroClientes,
+    loadingClientes,
+    refetchClientes
   } = useClientes();
 
   const { atualizarCliente } = useAtualizarCliente();
 
   const [view, setView] = useState<View>("list");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const openFor = (id: string, next: View) => {
+  const openFor = (id: number, next: View) => {
     setSelectedId(id);
     setView(next);
     setLocalError(null);
@@ -35,7 +35,7 @@ export default function Clientes() {
     setLocalError(null);
   };
 
-  const handleAtualizarImagem = async (imagem: string) => {
+  /* const handleAtualizarImagem = async (imagem: string) => {
     if (!selectedId) return;
     try {
       setSaving(true);
@@ -48,10 +48,10 @@ export default function Clientes() {
     } finally {
       setSaving(false);
     }
-  };
+  }; */
 
   // Early-returns deixam o fluxo previsível
-  if (loadingCliente) {
+  if (loadingClientes) {
     return (
       <div className="px-6 py-8">
         <h1 className="text-2xl font-bold mb-4 text-gray-800">Clientes Cadastrados</h1>
@@ -60,11 +60,11 @@ export default function Clientes() {
     );
   }
 
-  if (erroCliente) {
+  if (erroClientes) {
     return (
       <div className="px-6 py-8">
         <h1 className="text-2xl font-bold mb-4 text-gray-800">Clientes Cadastrados</h1>
-        <p className="text-red-500 mb-4">Erro: {erroCliente.message}</p>
+        <p className="text-red-500 mb-4">Erro: {erroClientes}</p>
         <BotaoCadastro text="Tentar novamente" onClick={() => refetchClientes()} />
       </div>
     );
@@ -82,6 +82,7 @@ export default function Clientes() {
             clientes.map((cliente) => (
               <div key={cliente.id} className="flex flex-col items-center gap-2">
                 <CardCliente cliente={cliente} />
+                <h1>{cliente.id}</h1>
 
                 <div className="flex gap-2">
                   <button
@@ -116,7 +117,7 @@ export default function Clientes() {
             <BotaoCadastro text={saving ? "Salvando..." : "Voltar"} onClick={voltar} />
           </div>
 
-          <AdicionarImagens onSubmit={handleAtualizarImagem} />
+          {/* <AdicionarImagens onSubmit={handleAtualizarImagem} /> */}
           {localError && <p className="text-red-500 mt-2">{localError}</p>}
         </>
       );

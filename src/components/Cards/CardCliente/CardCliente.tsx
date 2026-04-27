@@ -37,7 +37,6 @@ export default function CardCliente({ cliente }: CardClienteProps) {
             )}
 
             <p className={styles.text}>{nomeLimpo}</p>
-            <h1>{cliente.id}</h1>
         </div>
     );
 }

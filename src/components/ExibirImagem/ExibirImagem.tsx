@@ -28,7 +28,7 @@ export default function ExibirImagem({ src, alt = "Imagem", className = "" }: Pr
         <img
             src={src}
             alt={alt}
-            className={`rounded border w-[200px] h-[150px] ${className}`}
+            className={`rounded border ${className}`}
         />
     );
 }

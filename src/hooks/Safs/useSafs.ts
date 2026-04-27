@@ -1,49 +1,59 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import SafService from "../../services/SafService";
-import { ISAF } from "../../interfaces/SAF.interface";
+import type { ISAF } from "../../interfaces/SAF.interface";
 
-function numeroDoSaf(identificacao: string): number {
-  // pega o último bloco de dígitos da string (ex.: "SAF-012" -> 12)
-  const match = identificacao?.match(/\d+/g);
-  if (!match || match.length === 0) return -1;
-  return parseInt(match[match.length - 1], 10);
-}
-
+/**
+ * Hook para carregar e gerenciar a lista de SAFs.
+ * Retorna: safs, loadingSaf, erroSaf, refetchSafs e helpers para manter cache local.
+ */
 export default function useSafs() {
   const [safs, setSafs] = useState<ISAF[]>([]);
   const [loadingSaf, setLoadingSaf] = useState<boolean>(true);
   const [erroSaf, setErroSaf] = useState<Error | null>(null);
+  const mountedRef = useRef(true);
 
-  const refetchSafs = useCallback(async () => {
+  const fetchSafs = useCallback(async () => {
     setLoadingSaf(true);
     setErroSaf(null);
     try {
-      const dados = await SafService.listarSafs();
-
-      const ordenados = [...dados].sort((a, b) => {
-        const nb = numeroDoSaf(b.identificacao);
-        const na = numeroDoSaf(a.identificacao);
-        if (nb !== na) return nb - na; // decrescente por número
-        // empate: ordena decrescente por string para consistência
-        return b.identificacao.localeCompare(a.identificacao, undefined, { numeric: true });
-      });
-
-      setSafs(ordenados);
-    } catch (erro: any) {
-      setErroSaf(erro);
+      const data = await SafService.listarSafs();
+      if (!mountedRef.current) return;
+      setSafs(Array.isArray(data) ? data : []);
+    } catch (e) {
+      if (!mountedRef.current) return;
+      setErroSaf(e as Error);
     } finally {
+      if (!mountedRef.current) return;
       setLoadingSaf(false);
     }
   }, []);
 
   useEffect(() => {
-    refetchSafs();
-  }, [refetchSafs]);
+    mountedRef.current = true;
+    fetchSafs();
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [fetchSafs]);
 
-  return {
-    safs,
-    loadingSaf,
-    erroSaf,
-    refetchSafs,
-  };
+  // Helpers para manter o cache local em sincronia após mutações
+  const upsertLocal = useCallback((next: ISAF) => {
+    setSafs((prev) => {
+      const idx = prev.findIndex((s) => s.id === next.id);
+      if (idx >= 0) {
+        const clone = prev.slice();
+        clone[idx] = next;
+        return clone;
+      }
+      return [next, ...prev];
+    });
+  }, []);
+
+  const removeLocal = useCallback((id: string) => {
+    setSafs((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
+  const refetchSafs = fetchSafs;
+
+  return { safs, loadingSaf, erroSaf, refetchSafs, setSafs, upsertLocal, removeLocal };
 }

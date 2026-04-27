@@ -1,52 +1,45 @@
-import { ICliente } from '../interfaces/cliente.interface';
+import { ICliente, ICreateClienteDto, IUpdateClienteDto } from '../interfaces/cliente.interface';
 import api from './api.service';
 
+const BASE_URL = '/clientes';
 
 const ClienteService = {
-  /**
-   * Obtém todos os clientes cadastrados.
-   */
   async listarClientes(): Promise<ICliente[]> {
-    const response = await api.get('/clientes');
+    const response = await api.get<ICliente[]>(BASE_URL);
     return response.data;
   },
 
-  /**
-   * Obtém um cliente específico pelo ID.
-   */
-  async buscarCliente(id: string): Promise<ICliente | null> {
+  async buscarCliente(id: number): Promise<ICliente | null> {
     try {
-      const response = await api.get(`/clientes/${id}`);
+      const response = await api.get<ICliente>(`${BASE_URL}/${id}`);
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 404) {
-        return null; // não loga, só retorna null
+        return null;
       }
-      throw error; // outros erros ainda devem ser tratados
+      throw error;
     }
   },
 
-  /**
-   * Cria um novo cliente.
-   */
-  async criarCliente(cliente: ICliente): Promise<ICliente> {
-    const response = await api.post('/clientes', cliente);
+  async buscarClientesPorNome(nome: string): Promise<ICliente[]> {
+    const response = await api.get<ICliente[]>(`${BASE_URL}/buscar`, {
+      params: { nome },
+    });
     return response.data;
   },
 
-  /**
-   * Atualiza os dados de um cliente existente.
-   */
-  async atualizarCliente(id: string, cliente: Partial<ICliente>): Promise<ICliente> {
-    const response = await api.put(`/clientes/${id}`, cliente);
+  async criarCliente(payload: ICreateClienteDto): Promise<ICliente> {
+    const response = await api.post<ICliente>(BASE_URL, payload);
     return response.data;
   },
 
-  /**
-   * Remove um cliente pelo ID.
-   */
-  async removerCliente(id: string): Promise<void> {
-    await api.delete(`/clientes/${id}`);
+  async atualizarCliente(id: number, payload: IUpdateClienteDto): Promise<ICliente> {
+    const response = await api.patch<ICliente>(`${BASE_URL}/${id}`, payload);
+    return response.data;
+  },
+
+  async removerCliente(id: number): Promise<void> {
+    await api.delete(`${BASE_URL}/${id}`);
   },
 };
 

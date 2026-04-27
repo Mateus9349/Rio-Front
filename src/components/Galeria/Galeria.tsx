@@ -7,7 +7,7 @@ interface Props {
 
 export default function Galeria({ imagens, excluirImagem }: Props) {
     return (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
             {imagens && imagens.length > 0 ? (
                 imagens.map((imagem, index) => (
                     <div className="flex flex-col items-center gap-1" key={index}>

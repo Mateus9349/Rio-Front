@@ -1,20 +1,28 @@
 import styles from '../styles/Mapa.module.scss';
 import { useMemo, useState } from 'react';
 import usePlantios from '../hooks/plantio/usePlantios';
-import useClientes from '../hooks/clientes/useClientes';
-import { ISAF } from '../interfaces/SAF.interface';
+import {useClientes} from '../hooks/clientes/useClientes';
+import { ISAF, IImagemSaf } from '../interfaces/SAF.interface';
 import { MapaSAFs } from '../components/MapaSAFs/MapaSAFs';
 import SectionClientes from '../components/SectionClientes/SectionClientes';
 import SomaDeDados from '../components/SomaDeDados/SomaDeDados';
 import SectionDetalhesCliente from '../components/SectionDetalhesCliente/SectionDetalhesCliente';
 import imagemIdesam from '../assets/img/CO2.png';
-import ExibirImagem from '../components/ExibirImagem/ExibirImagem';
+import InfoSafMapa from '../components/InfoSafMapa/InfoSafMapa';
+
+function toImagemSafArray(v: unknown): IImagemSaf[] {
+    if (!Array.isArray(v)) return [];
+    return v.map((item: any) =>
+        typeof item === 'string' ? { url: item, ano: undefined as any } : item
+    );
+}
 
 export default function Mapa() {
     const { plantios } = usePlantios();
-    const { clientes } = useClientes();
+    const { clientes, loadingClientes } = useClientes();
     const [clienteId, setClienteId] = useState('');
-    const [imagens, setImagens] = useState<string[]>([]);
+    const [imagens, setImagens] = useState<IImagemSaf[]>([]); // mantém url+ano
+    const [selectedSaf, setSelectedSaf] = useState<ISAF>();
 
     const clienteIdUpper = clienteId.trim().toUpperCase();
 
@@ -24,20 +32,18 @@ export default function Mapa() {
     }, [plantios, clienteIdUpper]);
 
     const clientesFiltrados = useMemo(() => {
-        if (!clienteIdUpper) {
-            return clientes
-                .map((cliente) => {
-                    const plantiosCliente = plantios.filter(p => p.cliente.id === cliente.id);
-                    const maisRecente = Math.max(...plantiosCliente.map(p => p.anoCompensacao ?? 0), 0);
-                    return { cliente, maisRecente };
-                })
-                .filter(item => item.maisRecente > 0) // só clientes com pelo menos 1 plantio
-                .sort((a, b) => b.maisRecente - a.maisRecente)
-                .map(item => item.cliente);
-        }
+  if (!clienteId) {
+    return [...clientes].sort((a, b) => a.nome.localeCompare(b.nome));
+  }
 
-        return clientes.filter(c => c.id.toUpperCase() === clienteIdUpper);
-    }, [clientes, plantios, clienteIdUpper]);
+  const clienteIdNumber = Number(clienteId);
+
+  if (Number.isNaN(clienteIdNumber)) {
+    return [];
+  }
+
+  return clientes.filter((cliente) => cliente.id === clienteIdNumber);
+}, [clientes, clienteId]);
 
     const safs: ISAF[] = useMemo(() => {
         return plantiosFiltrados
@@ -51,7 +57,7 @@ export default function Mapa() {
                 identificacao: p.saf!.identificacao,
                 latitude: Number(p.saf!.latitude),
                 longitude: Number(p.saf!.longitude),
-                imagens: p.saf!.imagens ?? [],   // <- ESSENCIAL
+                imagens: toImagemSafArray(p.saf!.imagens), // mantém { url, ano }
             }));
     }, [plantiosFiltrados]);
 
@@ -73,12 +79,35 @@ export default function Mapa() {
         );
     }, [plantiosFiltrados]);
 
+    // Ao clicar no SAF no mapa, guarda todas as imagens (com ano)
     const mostraImagens = (saf: ISAF) => {
-        setImagens(saf.imagens ?? []);
-    }
+        setImagens(toImagemSafArray(saf.imagens));
+        setSelectedSaf(saf);
+    };
+
+    // ---- AGRUPA POR ANO (ordem desc; "Sem ano" por último) ----
+    const imagensPorAno = useMemo(() => {
+        const map = new Map<string, IImagemSaf[]>();
+        for (const img of imagens) {
+            const key =
+                typeof img.ano === 'number' && Number.isFinite(img.ano)
+                    ? String(img.ano)
+                    : 'Sem ano';
+            if (!map.has(key)) map.set(key, []);
+            map.get(key)!.push(img);
+        }
+        return Array.from(map.entries()).sort(([a], [b]) => {
+            const na = Number(a), nb = Number(b);
+            const aNum = Number.isFinite(na), bNum = Number.isFinite(nb);
+            if (aNum && bNum) return nb - na; // anos numéricos desc
+            if (aNum) return -1;              // num antes de "Sem ano"
+            if (bNum) return 1;
+            return a.localeCompare(b);
+        });
+    }, [imagens]);
 
     return (
-        <main className="space-y-6">
+        <section className="space-y-6 p-12">
             <div className={styles.container}>
                 <input
                     type="text"
@@ -111,11 +140,15 @@ export default function Mapa() {
                         <>
                             <SomaDeDados totais={totais} />
 
-                            <SectionClientes
-                                clientes={clientesFiltrados}
-                                plantios={plantiosFiltrados}
-                                selecionaCliente={setClienteId}
-                            />
+                            {loadingClientes ? (
+                                <p>Carregando clientes...</p>
+                            ) : (
+                                <SectionClientes
+                                    clientes={clientesFiltrados}
+                                    plantios={plantiosFiltrados}
+                                    selecionaCliente={setClienteId}
+                                />
+                            )}
                         </>
                     )}
                 </div>
@@ -127,17 +160,12 @@ export default function Mapa() {
                         onSafClick={mostraImagens}
                     />
 
-                    {!!imagens.length && (
-                        <div className="grid grid-cols-4 gap-3 mt-4">
-                            {imagens.map((img) => (
-                                <ExibirImagem 
-                                    src={img}
-                                />
-                            ))}
-                        </div>
-                    )}
+                    <InfoSafMapa
+                        imagensPorAno={imagensPorAno}
+                        selectedSaf={selectedSaf}
+                    />
                 </div>
             </section>
-        </main>
+        </section>
     );
 }
