@@ -34,7 +34,7 @@ export default function useCriaPlantio() {
 
       await recarregarPlantios();
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
       setErrorPlantio("Erro ao cadastrar o plantio.");
       throw error; // ← Isso está fazendo o erro "vazar" e não retornando false

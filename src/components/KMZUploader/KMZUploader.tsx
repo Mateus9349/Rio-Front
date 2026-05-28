@@ -2,6 +2,17 @@ import React, { useState } from "react";
 import JSZip from "jszip";
 import { parseString } from "xml2js";
 
+interface KmlPlacemark {
+  name?: string[];
+  Point?: Array<{ coordinates?: string[] }>;
+}
+
+interface ParsedKml {
+  kml?: {
+    Document?: Array<{ Placemark?: KmlPlacemark[] }>;
+  };
+}
+
 const KMZUploader: React.FC = () => {
   const [data, setData] = useState<{ nome: string; coordenadas: string }[]>([]);
 
@@ -20,14 +31,14 @@ const KMZUploader: React.FC = () => {
 
       const kmlData = await zip.files[kmlFile].async("text");
 
-      parseString(kmlData, (err, result) => {
+      parseString(kmlData, (err: Error | null, result: ParsedKml) => {
         if (err) {
           console.error("Erro ao analisar KML:", err);
           return;
         }
 
         const placemarks = result?.kml?.Document?.[0]?.Placemark || [];
-        const extractedData = placemarks.map((placemark: any) => {
+        const extractedData = placemarks.map((placemark) => {
           const nome = placemark.name?.[0] || "Sem nome";
           const coordenadas = placemark?.Point?.[0]?.coordinates?.[0]?.trim() || "Sem coordenadas";
           return { nome, coordenadas };

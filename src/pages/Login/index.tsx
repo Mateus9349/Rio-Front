@@ -3,6 +3,7 @@ import styles from './Login.module.scss';
 import { AuthContext } from '../../context/authContext';
 import { useNavigate } from 'react-router-dom';
 import { UserService } from '../../services/User.service';
+import { getErrorMessage } from '../../utils/errors';
 
 export default function Login() {
     const authContext = useContext(AuthContext);
@@ -33,8 +34,8 @@ export default function Login() {
             const userData = await UserService.login(username, password);
             login(userData);
             navigate('/home');
-        } catch (err: any) {
-            setError(err.message || 'Erro ao fazer login');
+        } catch (err: unknown) {
+            setError(getErrorMessage(err, 'Erro ao fazer login'));
         } finally {
             setLoading(false);
         }

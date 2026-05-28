@@ -1,4 +1,5 @@
 import { ICliente, ICreateClienteDto, IUpdateClienteDto } from '../interfaces/cliente.interface';
+import { getErrorStatus } from '../utils/errors';
 import api from './api.service';
 
 const BASE_URL = '/clientes';
@@ -9,12 +10,12 @@ const ClienteService = {
     return response.data;
   },
 
-  async buscarCliente(id: number): Promise<ICliente | null> {
+  async buscarCliente(id: number | string): Promise<ICliente | null> {
     try {
       const response = await api.get<ICliente>(`${BASE_URL}/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error: unknown) {
+      if (getErrorStatus(error) === 404) {
         return null;
       }
       throw error;
@@ -33,12 +34,12 @@ const ClienteService = {
     return response.data;
   },
 
-  async atualizarCliente(id: number, payload: IUpdateClienteDto): Promise<ICliente> {
+  async atualizarCliente(id: number | string, payload: IUpdateClienteDto): Promise<ICliente> {
     const response = await api.patch<ICliente>(`${BASE_URL}/${id}`, payload);
     return response.data;
   },
 
-  async removerCliente(id: number): Promise<void> {
+  async removerCliente(id: number | string): Promise<void> {
     await api.delete(`${BASE_URL}/${id}`);
   },
 };

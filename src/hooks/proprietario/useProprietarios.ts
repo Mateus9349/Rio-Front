@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { toError } from '../../utils/errors';
 import { IProprietario } from "../../interfaces/proprietario.interface";
 import ProprietarioService from "../../services/ProprietarioService";
 
@@ -13,8 +14,8 @@ export default function useProprietarios() {
     try {
       const dados = await ProprietarioService.listarProprietarios();
       setProprietarios(dados);
-    } catch (erro: any) {
-      setErroProprietario(erro);
+    } catch (erro: unknown) {
+      setErroProprietario(toError(erro, 'Erro ao carregar proprietários.'));
     } finally {
       setLoadingProprietario(false);
     }

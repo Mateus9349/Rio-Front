@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Workbook } from "exceljs";
 
+type PreviewRow = Record<"Coluna1" | "Coluna2" | "Coluna3", string | number>;
+
 const UploadExcel: React.FC = () => {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<PreviewRow[]>([]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -16,14 +18,13 @@ const UploadExcel: React.FC = () => {
       const workbook = new Workbook();
       await workbook.xlsx.load(buffer);
 
-      const sheet = workbook.worksheets[0]; // Pega a primeira aba
-      const rows = sheet.getSheetValues(); // Pega os valores da planilha
+      const sheet = workbook.worksheets[0];
+      const rows = sheet.getSheetValues();
 
-      // Filtra valores válidos e ignora linhas vazias
-      const jsonData = rows
-        .filter((row): row is (string | number)[] => Array.isArray(row)) // Garante que é um array
+      const jsonData: PreviewRow[] = rows
+        .filter((row): row is (string | number)[] => Array.isArray(row))
         .map((row) => ({
-          Coluna1: row[1] || "", // Evita erro ao acessar índice inexistente
+          Coluna1: row[1] || "",
           Coluna2: row[2] || "",
           Coluna3: row[3] || "",
         }));

@@ -3,6 +3,7 @@ export interface ICliente {
   nome: string;
   email?: string;
   telefone?: string;
+  imagem?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -11,6 +12,7 @@ export interface ICreateClienteDto {
   nome: string;
   email?: string;
   telefone?: string;
+  imagem?: string;
 }
 
-export interface IUpdateClienteDto extends Partial<ICreateClienteDto> { }
+export type IUpdateClienteDto = Partial<ICreateClienteDto>;

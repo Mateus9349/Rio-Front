@@ -1,4 +1,5 @@
 import { IUser } from '../interfaces/user.interface';
+import { getErrorMessage } from '../utils/errors';
 import api from './api.service';
 
 export class UserService {
@@ -18,10 +19,8 @@ export class UserService {
             };
 
             return userData;
-        } catch (error: any) {
-            const message =
-                error.response?.data?.message || 'Erro ao fazer login';
-            throw new Error(message);
+        } catch (error: unknown) {
+            throw new Error(getErrorMessage(error, 'Erro ao fazer login'));
         }
     }
 }
