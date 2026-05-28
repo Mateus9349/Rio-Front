@@ -1,7 +1,7 @@
 import styles from '../styles/Mapa.module.scss';
 import { useMemo, useState } from 'react';
 import usePlantios from '../hooks/plantio/usePlantios';
-import {useClientes} from '../hooks/clientes/useClientes';
+import { useClientes } from '../hooks/clientes/useClientes';
 import { ISAF, IImagemSaf } from '../interfaces/SAF.interface';
 import { MapaSAFs } from '../components/MapaSAFs/MapaSAFs';
 import SectionClientes from '../components/SectionClientes/SectionClientes';
@@ -12,9 +12,18 @@ import InfoSafMapa from '../components/InfoSafMapa/InfoSafMapa';
 
 function toImagemSafArray(v: unknown): IImagemSaf[] {
     if (!Array.isArray(v)) return [];
-    return v.map((item: any) =>
-        typeof item === 'string' ? { url: item, ano: undefined as any } : item
-    );
+    return v.flatMap((item): IImagemSaf[] => {
+        if (typeof item === 'string') {
+            return [{ url: item }];
+        }
+
+        if (typeof item === 'object' && item !== null && 'url' in item) {
+            const imagem = item as IImagemSaf;
+            return imagem.url ? [imagem] : [];
+        }
+
+        return [];
+    });
 }
 
 export default function Mapa() {

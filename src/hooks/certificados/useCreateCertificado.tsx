@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getErrorMessage } from '../../utils/errors';
 import CertificadoService from '../../services/certificado.service';
 import {
     ICertificado,
@@ -24,11 +25,8 @@ export default function useCreateCertificado() {
 
             setCertificadoCriado(response);
             return response;
-        } catch (error: any) {
-            const mensagem =
-                error?.response?.data?.message ||
-                error?.message ||
-                'Erro ao criar certificado.';
+        } catch (error: unknown) {
+            const mensagem = getErrorMessage(error, 'Erro ao criar certificado.');
 
             setErrorCreateCertificado(
                 Array.isArray(mensagem) ? mensagem.join(', ') : mensagem

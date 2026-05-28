@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getErrorMessage } from '../../utils/errors';
 import ClienteService from '../../services/ClienteService';
 import { ICliente } from '../../interfaces/cliente.interface';
 
@@ -24,9 +25,8 @@ export function useClientesPorNome(): UseClientesPorNomeReturn {
       setClientesEncontrados(clientes);
 
       return clientes;
-    } catch (error: any) {
-      const mensagem =
-        error?.response?.data?.message || 'Erro ao buscar clientes.';
+    } catch (error: unknown) {
+      const mensagem = getErrorMessage(error, 'Erro ao buscar clientes.');
       setErroBusca(mensagem);
       setClientesEncontrados([]);
       return [];

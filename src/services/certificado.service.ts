@@ -1,4 +1,5 @@
 import api from './api.service';
+import { getErrorStatus } from '../utils/errors';
 import {
     ICertificado,
     ICreateCertificadoDto,
@@ -24,8 +25,8 @@ const CertificadoService = {
         try {
             const response = await api.get<ICertificado>(`${BASE_URL}/${id}`);
             return response.data;
-        } catch (error: any) {
-            if (error.response?.status === 404) {
+        } catch (error: unknown) {
+            if (getErrorStatus(error) === 404) {
                 return null;
             }
             throw error;
@@ -41,8 +42,8 @@ const CertificadoService = {
                 `${BASE_URL}/codigo/${encodeURIComponent(codigo)}`
             );
             return response.data;
-        } catch (error: any) {
-            if (error.response?.status === 404) {
+        } catch (error: unknown) {
+            if (getErrorStatus(error) === 404) {
                 return null;
             }
             throw error;

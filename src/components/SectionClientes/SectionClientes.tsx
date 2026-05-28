@@ -39,9 +39,9 @@ export default function SectionClientes({ clientes, plantios, selecionaCliente }
 
     // Determinar o ano de compensação mais recente por grupo
     for (const [nomeNorm, grupo] of nomeParaGrupo.entries()) {
-        const ids = grupo.map(c => c.id);
+        const ids = grupo.map(c => String(c.id));
         const anos = plantios
-            .filter(p => ids.includes(p.cliente.id))
+            .filter(p => ids.includes(String(p.cliente.id)))
             .map(p => p.anoCompensacao);
         clienteAnoMap.set(nomeNorm, anos.length ? Math.max(...anos) : 0);
     }
@@ -67,7 +67,7 @@ export default function SectionClientes({ clientes, plantios, selecionaCliente }
         <div className={styles.container}>
             <div className={styles.containerClientes}>
                 {clientesPagina.map((cliente) => (
-                    <div key={cliente.id} onClick={() => selecionaCliente?.(cliente.id)}>
+                    <div key={cliente.id} onClick={() => selecionaCliente?.(String(cliente.id))}>
                         <CardCliente cliente={cliente} />
                     </div>
                 ))}

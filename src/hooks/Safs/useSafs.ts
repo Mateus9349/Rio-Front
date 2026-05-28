@@ -23,8 +23,9 @@ export default function useSafs() {
       if (!mountedRef.current) return;
       setErroSaf(e as Error);
     } finally {
-      if (!mountedRef.current) return;
-      setLoadingSaf(false);
+      if (mountedRef.current) {
+        setLoadingSaf(false);
+      }
     }
   }, []);
 

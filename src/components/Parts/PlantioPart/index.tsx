@@ -1,5 +1,7 @@
+import type { ICertificado } from "../../../interfaces/certificado.interface";
+
 interface Props {
-    dados: any; // Tipar corretamente se possível
+    dados: ICertificado;
     handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
@@ -38,7 +40,7 @@ export default function PlantioPart({ dados, handleChange }: Props) {
                     <input
                         type="number"
                         name="tCO2compensadas"
-                        value={dados.tco2Compensadas === '' ? 0 : dados.tco2Compensadas}
+                        value={dados.tco2Compensadas}
                         onChange={handleChange}
                         className="border rounded p-2"
                     />

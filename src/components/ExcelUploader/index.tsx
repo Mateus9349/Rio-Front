@@ -1,14 +1,14 @@
 import * as XLSX from "xlsx";
 import { IPlantioCompleto } from "../../interfaces/plantioCompleto.interface";
 
+type ExcelCell = string | number | boolean | Date | null | undefined;
+type ExcelRow = ExcelCell[];
+
 interface Props {
   retornaDados: (dados: IPlantioCompleto[]) => void;
 }
 
 const ExcelUploader: React.FC<Props> = ({ retornaDados }) => {
-  /* const [headers, setHeaders] = useState<string[]>([]);
-  const [data, setData] = useState<any[]>([]); */
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -20,24 +20,21 @@ const ExcelUploader: React.FC<Props> = ({ retornaDados }) => {
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
 
-      // Converte para JSON preservando os cabeçalhos corretos
-      const jsonData: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      const jsonData = XLSX.utils.sheet_to_json<ExcelRow>(sheet, { header: 1 });
 
       if (jsonData.length === 0) return;
 
-      // Ajuste: remover colunas vazias no início
-      const correctedHeaders = jsonData[0].filter((header: any) => header);
-      /* setHeaders(correctedHeaders); */
+      const correctedHeaders = jsonData[0]
+        .filter((header): header is string | number => Boolean(header))
+        .map(String);
 
-      // Ajuste: pegar apenas as colunas existentes
-      const parsedData: IPlantioCompleto[] = jsonData.slice(1).map((row) =>
-        correctedHeaders.reduce((acc: { [x: string]: any; }, header: string | number, index: string | number) => {
+      const parsedData = jsonData.slice(1).map((row) =>
+        correctedHeaders.reduce<Record<string, ExcelCell>>((acc, header, index) => {
           acc[header] = row[index] || "";
           return acc;
-        }, {} as Record<string, any>)
-      );
+        }, {})
+      ) as unknown as IPlantioCompleto[];
 
-      /* setData(parsedData); */
       retornaDados(parsedData);
     };
 
@@ -54,27 +51,6 @@ const ExcelUploader: React.FC<Props> = ({ retornaDados }) => {
         onChange={handleFileUpload}
         className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       />
-
-      {/* {data.length > 0 && (
-        <table>
-          <thead>
-            <tr>
-              {headers.map((header, index) => (
-                <th key={index}>{header}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {headers.map((header, colIndex) => (
-                  <td key={colIndex}>{row[header]}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )} */}
     </div>
   );
 };

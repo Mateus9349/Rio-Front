@@ -1,11 +1,26 @@
 import React, { useState } from "react";
-import { DOMParser } from "@xmldom/xmldom"; // Para manipulação de XML
-import * as toGeoJSON from "@mapbox/togeojson"; // Certifique-se de que o pacote está instalado
+import { DOMParser } from "@xmldom/xmldom";
+import * as toGeoJSON from "@mapbox/togeojson";
+import type { Feature, FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
 import MapaKML from "../MapaKML";
 import { IDadosCompensados } from "../../interfaces/dadosCompensados.interface";
 
+function getProperty(props: GeoJsonProperties, key: string): string {
+    const value = props?.[key];
+    return value === undefined || value === null ? "" : String(value);
+}
+
+function coordenadasDaFeature(feature: Feature<Geometry, GeoJsonProperties>): [number, number, number] {
+    if (feature.geometry.type !== "Point") {
+        return [0, 0, 0];
+    }
+
+    const [longitude = 0, latitude = 0, altitude = 0] = feature.geometry.coordinates;
+    return [Number(longitude), Number(latitude), Number(altitude)];
+}
+
 export default function ProcessarKML({ passaDados }: { passaDados: (dados: IDadosCompensados) => void }) {
-    const [geoJson, setGeoJson] = useState<any | null>(null);
+    const [geoJson, setGeoJson] = useState<FeatureCollection | null>(null);
     const [dadosCompensados, setDadosCompensados] = useState<IDadosCompensados[]>([]);
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,44 +35,35 @@ export default function ProcessarKML({ passaDados }: { passaDados: (dados: IDado
                         throw new Error("O arquivo KML está vazio.");
                     }
 
-                    // Parseando o texto KML
                     const parser = new DOMParser();
                     const kmlDoc = parser.parseFromString(kmlText, "application/xml");
 
-                    // Verifica erros no parsing
                     const parseError = kmlDoc.getElementsByTagName("parsererror");
                     if (parseError.length > 0) {
                         throw new Error("Erro ao parsear o arquivo KML.");
                     }
 
-                    // Converte o KML para GeoJSON
-                    const geoJsonData = toGeoJSON.kml(kmlDoc);
+                    const geoJsonData = toGeoJSON.kml(kmlDoc) as FeatureCollection;
 
-                    if (!geoJsonData || !geoJsonData.features || geoJsonData.features.length === 0) {
+                    if (!geoJsonData?.features?.length) {
                         throw new Error("Nenhuma geometria válida encontrada no arquivo KML.");
                     }
 
-                    // Extraindo dados do GeoJSON
-                    const dadosExtraidos = geoJsonData.features.map((feature: any) => {
+                    const dadosExtraidos = geoJsonData.features.map((feature) => {
                         const props = feature.properties || {};
-                        const geometry = feature.geometry;
 
                         return {
-                            areaHa: parseFloat(props["area_ha"] || "0"),
-                            layer: props["layer"] || "",
-                            proprietario: props["Propriet"] || "",
-                            comunidade: props["Comunidade"] || "",
-                            xCentroid: parseFloat(props["x_centroid"] || "0"),
-                            y: parseFloat(props["y"] || "0"),
-                            numeroSAF: parseInt(props["n° do SAF"] || "0"),
-                            coordenadas: geometry.type === "Point" ? geometry.coordinates : [0, 0, 0],
+                            areaHa: parseFloat(getProperty(props, "area_ha") || "0"),
+                            layer: getProperty(props, "layer"),
+                            proprietario: getProperty(props, "Propriet"),
+                            comunidade: getProperty(props, "Comunidade"),
+                            xCentroid: parseFloat(getProperty(props, "x_centroid") || "0"),
+                            y: parseFloat(getProperty(props, "y") || "0"),
+                            numeroSAF: parseInt(getProperty(props, "n° do SAF") || "0", 10),
+                            coordenadas: coordenadasDaFeature(feature),
                         };
                     });
 
-                    console.log("GeoJSON gerado:", geoJsonData);
-                    console.log("Dados extraídos:", dadosExtraidos);
-
-                    // Atualizando os estados
                     setGeoJson(geoJsonData);
                     setDadosCompensados(dadosExtraidos);
                     passaDados(dadosExtraidos[0]);

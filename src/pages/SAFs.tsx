@@ -108,7 +108,7 @@ export default function SAFs() {
   // Se seu <Galeria> ainda espera string[], mapeie objetos -> urls
   const imagensUrls: string[] = useMemo(() => {
     const imgs = selectedSaf?.imagens ?? [];
-    return imgs.map ? imgs.map((i: any) => (typeof i === "string" ? i : i.url)) : [];
+    return imgs.flatMap((imagem) => imagem.url ? [imagem.url] : []);
   }, [selectedSaf?.imagens]);
 
   const lista = useMemo(() => {

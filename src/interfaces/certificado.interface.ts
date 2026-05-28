@@ -47,8 +47,7 @@ export interface ICreateCertificadoDto {
     ativo?: boolean;
 }
 
-export interface IUpdateCertificadoDto
-    extends Partial<ICreateCertificadoDto> { }
+export type IUpdateCertificadoDto = Partial<ICreateCertificadoDto>;
 
 export interface IVerificarExistenciaCertificadoResponse {
     exists: boolean;

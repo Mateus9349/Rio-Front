@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { getErrorMessage } from '../../utils/errors';
 import CertificadoService from '../../services/certificado.service';
 import { IVerificarExistenciaCertificadoResponse } from '../../interfaces/certificado.interface';
 
@@ -23,11 +24,8 @@ export function useVerificaExisteCertificado() {
                     await CertificadoService.verificarExistenciaPorCodigoESaf(codigo, saf);
 
                 return response;
-            } catch (error: any) {
-                const mensagem =
-                    error?.response?.data?.message ||
-                    error?.message ||
-                    'Erro ao verificar existência do certificado';
+            } catch (error: unknown) {
+                const mensagem = getErrorMessage(error, 'Erro ao verificar existência do certificado');
 
                 setErroVerificaExistencia(mensagem);
                 return null;
