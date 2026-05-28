@@ -1,111 +1,169 @@
 // File: components/TabelaPlantios.tsx
-import { useEffect, useState } from "react";
-import { IPlantioCompleto } from "../../interfaces/plantioCompleto.interface";
+import { useCallback, useEffect, useState } from "react";
 import useSafs from "../../hooks/Safs/useSafs";
 import useComunidades from "../../hooks/comunidade/useComunidades";
 import useProprietarios from "../../hooks/proprietario/useProprietarios";
-import usePlantios from "../../hooks/plantio/usePlantios";
 import { normalizar } from "../../utils/funcoes";
 import TabelaHeader from "../TabelaHeader/TabelaHeader";
 import LinhaPlantio from "../LinhaPlantio/LinhaPlantio";
 import FormPlantio from "../Forms/FormPlantio/FormPlantio";
+import { ICertificado } from "../../interfaces/certificado.interface";
+import { useVerificaExisteCertificado } from "../../hooks/certificados/useVerificaExistenciaCertificado";
 
 interface Props {
-  dados: IPlantioCompleto[];
+  dados: ICertificado[];
   recarrega?: number;
 }
+
+type StatusCadastro = boolean | "aguardando";
 
 export default function TabelaPlantios({ dados, recarrega }: Props) {
   const { safs } = useSafs();
   const { comunidades } = useComunidades();
   const { proprietarios } = useProprietarios();
-  const { plantios, loadingPlantios, recarregarPlantios } = usePlantios();
-  const [statusCadastro, setStatusCadastro] = useState<(boolean | "aguardando")[]>([]);
-  const [plantioSelecionado, setPlantioSelecionado] = useState<IPlantioCompleto | null>(null);
-  const [contador] = useState(0);
 
-  const gerarChave = (
-    clienteId: string,
-    safId: string,
-    comunidadeId: string,
-    proprietarioId: string,
-    ano: number,
-    tCO2: number,
-    arvores: number,
-    area: number
-  ) =>
-    `${clienteId}-${safId}-${comunidadeId}-${proprietarioId}-${ano}-${Number(tCO2).toFixed(2)}-${arvores}-${Number(area).toFixed(2)}`;
+  const { verificarExisteCertificado, loadingVerificaExistencia } =
+    useVerificaExisteCertificado();
 
-  useEffect(() => {
-    if (!safs.length || !comunidades.length || !proprietarios.length || !plantios.length) return;
+  const [statusCadastro, setStatusCadastro] = useState<StatusCadastro[]>([]);
+  const [plantioSelecionado, setPlantioSelecionado] =
+    useState<ICertificado | null>(null);
 
-    const mapCadastrados = new Map<string, boolean>();
-    plantios.forEach(p => {
-      const key = gerarChave(
-        p.cliente.id,
-        p.saf.id,
-        p.comunidade.id,
-        p.proprietario.id,
-        p.anoCompensacao,
-        Number(p.tCO2Compensadas || 0),
-        p.numeroArvores,
-        Number(p.areaM2 || 0)
-      );
-      mapCadastrados.set(key, true);
-    });
+  const normalizarCertificado = useCallback((certificado: ICertificado): ICertificado => {
+    return {
+      ...certificado,
+      cliente: {
+        ...certificado.cliente,
+        nome: normalizar(certificado.cliente.nome),
+      },
+      comunidade: {
+        ...certificado.comunidade,
+        nome: normalizar(certificado.comunidade.nome),
+      },
+      proprietario: {
+        ...certificado.proprietario,
+        nome: normalizar(certificado.proprietario.nome),
+      },
+      saf: {
+        ...certificado.saf,
+        identificacao: normalizar(certificado.saf.identificacao),
+      },
+    };
+  }, []);
 
-    const resultados = dados.map(plantio => {
-      const saf = safs.find(s => normalizar(s.identificacao) === normalizar(plantio.SAFs));
-      const comunidade = comunidades.find(c => normalizar(c.nome) === normalizar(plantio.Comunidade));
-      const proprietario = proprietarios.find(p => normalizar(p.nome) === normalizar(plantio.Proprietario_Responsavel));
-      if (!saf?.id || !comunidade?.id || !proprietario?.id) return "aguardando";
+  const verificarStatusCertificados = useCallback(async () => {
+    if (!dados.length) {
+      setStatusCadastro([]);
+      return;
+    }
 
-      const chave = gerarChave(
-        plantio.ID_Cliente,
-        saf.id,
-        comunidade.id,
-        proprietario.id,
-        plantio.Ano,
-        Number(plantio.tCO2compensadas || 0),
-        plantio.Arvores,
-        Number(plantio.Area_m2 || 0)
-      );
-      return mapCadastrados.has(chave);
-    });
+    if (!safs.length || !comunidades.length || !proprietarios.length) {
+      setStatusCadastro(dados.map(() => "aguardando"));
+      return;
+    }
+
+    setStatusCadastro(dados.map(() => "aguardando"));
+
+    const resultados = await Promise.all(
+      dados.map(async (certificadoOriginal) => {
+        const certificado = normalizarCertificado(certificadoOriginal);
+
+        const safExiste = safs.find(
+          (saf) =>
+            normalizar(saf.identificacao) ===
+            normalizar(certificado.saf.identificacao)
+        );
+
+        const comunidadeExiste = comunidades.find(
+          (comunidade) =>
+            normalizar(comunidade.nome) ===
+            normalizar(certificado.comunidade.nome)
+        );
+
+        const proprietarioExiste = proprietarios.find(
+          (proprietario) =>
+            normalizar(proprietario.nome) ===
+            normalizar(certificado.proprietario.nome)
+        );
+
+        const dadosBaseExistem =
+          Boolean(safExiste?.id) &&
+          Boolean(comunidadeExiste?.id) &&
+          Boolean(proprietarioExiste?.id);
+
+        if (!dadosBaseExistem) {
+          return false;
+        }
+
+        try {
+          const existe = await verificarExisteCertificado(
+            certificado.codigo,
+            certificado.saf.identificacao
+          );
+
+          return Boolean(existe);
+        } catch (error) {
+          console.error(
+            "Erro ao verificar certificado na tabela:",
+            certificado.codigo,
+            certificado.saf.identificacao,
+            error
+          );
+
+          return "aguardando" as const;
+        }
+      })
+    );
 
     setStatusCadastro(resultados);
-  }, [recarrega, dados, safs, comunidades, proprietarios, plantios, contador]);
+  }, [
+    dados,
+    safs,
+    comunidades,
+    proprietarios,
+    normalizarCertificado,
+    verificarExisteCertificado,
+  ]);
+
+  useEffect(() => {
+    verificarStatusCertificados();
+  }, [verificarStatusCertificados, recarrega]);
 
   const handleCadastroFinalizado = async () => {
     setPlantioSelecionado(null);
-    await recarregarPlantios();
+    await verificarStatusCertificados();
   };
 
   return (
     <div className="overflow-x-auto">
       <table className="table-auto border-collapse border border-gray-300 w-full">
         <TabelaHeader />
+
         <tbody>
           {dados.map((plantio, index) => (
             <LinhaPlantio
-              key={index}
+              key={`${plantio.codigo}-${plantio.saf.identificacao}-${index}`}
               plantio={plantio}
-              status={statusCadastro[index]}
-              onCadastrar={() => setPlantioSelecionado(plantio)}
+              status={statusCadastro[index] ?? "aguardando"}
+              onCadastrar={() =>
+                setPlantioSelecionado(normalizarCertificado(plantio))
+              }
             />
           ))}
         </tbody>
       </table>
 
-      {loadingPlantios && (
-        <p className="text-center text-sm mt-2 text-gray-500">Carregando plantios cadastrados...</p>
+      {loadingVerificaExistencia && (
+        <p className="text-center text-sm mt-2 text-gray-500">
+          Verificando status dos certificados...
+        </p>
       )}
 
       {plantioSelecionado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-4xl">
             <FormPlantio
-              plantio={plantioSelecionado}
+              certificado={plantioSelecionado}
               onVerificacaoFinalizada={handleCadastroFinalizado}
             />
           </div>

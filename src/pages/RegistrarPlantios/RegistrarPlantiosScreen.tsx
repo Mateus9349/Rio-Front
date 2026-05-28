@@ -134,7 +134,7 @@ export default function RegistrarPlantioScreen() {
     />
   );
 
-  /* const renderTabela = () => (
+  const renderTabela = () => (
     <TabelaPlantios
       dados={dadosDoPlantio}
       recarrega={contadorAtualizacao}
@@ -149,7 +149,7 @@ export default function RegistrarPlantioScreen() {
         setMenu('tabela');
       }}
     />
-  ); */
+  );
 
   return (
     <main /* className={styles.homeContainer} */>
@@ -159,8 +159,8 @@ export default function RegistrarPlantioScreen() {
       {menu === 'confirmacao' && dadosDoPlantio.length > 0 && renderMenuConfirmacao()}
       {menu !== 'confirmacao' && dadosDoPlantio.length > 0 && renderBotaoConfirmacao()}
 
-      {/* {menu === 'tabela' && renderTabela()}
-      {menu !== 'tabela' && dadosDoPlantio.length > 0 && renderBotaoTabela()} */}
+      {menu === 'tabela' && renderTabela()}
+      {menu !== 'tabela' && dadosDoPlantio.length > 0 && renderBotaoTabela()}
     </main>
   );
 }

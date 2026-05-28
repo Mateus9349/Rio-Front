@@ -1,26 +1,26 @@
 // File: components/LinhaPlantio.tsx
-import { IPlantioCompleto } from "../../interfaces/plantioCompleto.interface";
+import { ICertificado } from "../../interfaces/certificado.interface";
 
 interface Props {
-    plantio: IPlantioCompleto;
+    plantio: ICertificado;
     status: boolean | "aguardando" | "verificando";
-    onCadastrar?: (plantio: IPlantioCompleto) => void;
+    onCadastrar?: (plantio: ICertificado) => void;
 }
 
 export default function LinhaPlantio({ plantio, status, onCadastrar }: Props) {
     return (
         <tr>
-            <td className="border px-4 py-2">{plantio.ID_Cliente}</td>
-            <td className="border px-4 py-2">{plantio.Cliente}</td>
-            <td className="border px-4 py-2">{plantio.Ano}</td>
-            <td className="border px-4 py-2">{plantio.tCO2compensadas}</td>
-            <td className="border px-4 py-2">{plantio.Arvores}</td>
-            <td className="border px-4 py-2">{plantio.Area_m2}</td>
-            <td className="border px-4 py-2">{plantio.SAFs}</td>
-            <td className="border px-4 py-2">{plantio.Coord_x}</td>
-            <td className="border px-4 py-2">{plantio.Coord_y}</td>
-            <td className="border px-4 py-2">{plantio.Comunidade}</td>
-            <td className="border px-4 py-2">{plantio.Proprietario_Responsavel}</td>
+            <td className="border px-4 py-2">{plantio.codigo}</td>
+            <td className="border px-4 py-2">{plantio.cliente.nome}</td>
+            <td className="border px-4 py-2">{plantio.ano}</td>
+            <td className="border px-4 py-2">{plantio.tco2Compensadas}</td>
+            <td className="border px-4 py-2">{plantio.arvores}</td>
+            <td className="border px-4 py-2">{plantio.areaM2}</td>
+            <td className="border px-4 py-2">{plantio.saf.identificacao}</td>
+            <td className="border px-4 py-2">{plantio.saf.localizacao.latitude}</td>
+            <td className="border px-4 py-2">{plantio.saf.localizacao.longitude}</td>
+            <td className="border px-4 py-2">{plantio.comunidade.nome}</td>
+            <td className="border px-4 py-2">{plantio.proprietario.nome}</td>
             <td className="border px-4 py-2">
                 {status === "aguardando" && "⏳ Aguardando IDs"}
                 {status === "verificando" && "🔍 Verificando..."}
