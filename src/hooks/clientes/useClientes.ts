@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { getErrorMessage } from '../../utils/errors';
 import ClienteService from '../../services/ClienteService';
 import { ICliente } from '../../interfaces/cliente.interface';
 
@@ -21,11 +22,8 @@ export function useClientes(): UseClientesReturn {
 
       const data = await ClienteService.listarClientes();
       setClientes(data);
-    } catch (error: any) {
-      setErroClientes(
-        error?.response?.data?.message ||
-          'Erro ao carregar clientes.'
-      );
+    } catch (error: unknown) {
+      setErroClientes(getErrorMessage(error, 'Erro ao carregar clientes.'));
     } finally {
       setLoadingClientes(false);
     }

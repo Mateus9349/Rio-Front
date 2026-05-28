@@ -1,8 +1,8 @@
 // utils/verificaPlantioExisteMemoria.ts
 import { IPlantio } from "../interfaces/plantio.interface";
 
-function normalizarNumero(valor: any): number {
-    const num = parseFloat(valor);
+function normalizarNumero(valor: number | string): number {
+    const num = parseFloat(String(valor));
     return isNaN(num) ? 0 : parseFloat(num.toFixed(2));
 }
 

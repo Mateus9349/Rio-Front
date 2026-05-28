@@ -13,7 +13,7 @@ export default function usePlantios() {
             const dados = await PlantioService.listarPlantios(); // deve retornar plantios completos
             setPlantios(dados);
             setError(null);
-        } catch (err) {
+        } catch {
             setError("Erro ao carregar os plantios.");
         } finally {
             setLoading(false);

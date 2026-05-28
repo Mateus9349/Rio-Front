@@ -1,7 +1,7 @@
 // interfaces/SAF.interface.ts
 export interface IImagemSaf {
     url: string;
-    ano: number;
+    ano?: number;
 }
 
 export interface ISAF {

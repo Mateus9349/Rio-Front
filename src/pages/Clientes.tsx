@@ -1,10 +1,8 @@
 import { useState } from "react";
 import CardCliente from "../components/Cards/CardCliente/CardCliente";
 import { useClientes } from "../hooks/clientes/useClientes";
-import AdicionarImagens from "../components/AdicionarImagens/AdicionarImagens";
 import BotaoCadastro from "../components/BotaoCadastro";
 import FormAtualizaCliente from "../components/FormAtualizaCliente/FormAtualizaCliente";
-import useAtualizarCliente from "../hooks/clientes/useAtualizarCliente";
 
 type View = "list" | "edit" | "image";
 
@@ -16,11 +14,10 @@ export default function Clientes() {
     refetchClientes
   } = useClientes();
 
-  const { atualizarCliente } = useAtualizarCliente();
 
   const [view, setView] = useState<View>("list");
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [saving] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const openFor = (id: number, next: View) => {
@@ -123,7 +120,7 @@ export default function Clientes() {
       );
       break;
 
-    case "edit":
+    case "edit": {
       const clienteSelecionado = clientes.find((c) => c.id === selectedId);
 
       if (!clienteSelecionado) {
@@ -149,6 +146,7 @@ export default function Clientes() {
         </>
       );
       break;
+    }
   }
 
   return (

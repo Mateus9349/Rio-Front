@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getErrorMessage } from '../../utils/errors';
 import ClienteService from '../../services/ClienteService';
 import {
   ICliente,
@@ -30,10 +31,8 @@ export function useCreateCliente(): UseCreateClienteReturn {
 
       setSucessoCreateCliente(true);
       return novoCliente;
-    } catch (error: any) {
-      setErroCreateCliente(
-        error?.response?.data?.message || 'Erro ao criar cliente.'
-      );
+    } catch (error: unknown) {
+      setErroCreateCliente(getErrorMessage(error, 'Erro ao criar cliente.'));
       console.error('Erro ao criar cliente:', error);
       return null;
     } finally {

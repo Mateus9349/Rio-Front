@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { toError } from '../../utils/errors';
 import { IComunidade } from "../../interfaces/comunidade.interface";
 import ComunidadeService from "../../services/ComunidadeService";
 
@@ -13,8 +14,8 @@ export default function useComunidades() {
     try {
       const dados = await ComunidadeService.listarComunidades();
       setComunidades(dados);
-    } catch (erro: any) {
-      setErroComunidade(erro);
+    } catch (erro: unknown) {
+      setErroComunidade(toError(erro, 'Erro ao carregar comunidades.'));
     } finally {
       setLoadingComunidade(false);
     }

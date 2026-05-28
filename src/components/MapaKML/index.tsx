@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Feature, Geometry } from 'geojson';
+import { Feature, FeatureCollection, GeoJsonProperties, Geometry } from 'geojson';
 
 interface MapaKMLProps {
-    geoJson: any | null;
+    geoJson: FeatureCollection | null;
 }
 
 const MapaKML: React.FC<MapaKMLProps> = ({ geoJson }) => {
@@ -29,7 +29,7 @@ const MapaKML: React.FC<MapaKMLProps> = ({ geoJson }) => {
                         fillOpacity: type === 'Polygon' ? 0.5 : undefined,
                     };
                 },
-                onEachFeature: (feature: Feature<Geometry, any> | undefined, layer) => {
+                onEachFeature: (feature: Feature<Geometry, GeoJsonProperties> | undefined, layer) => {
                     if (!feature || !feature.properties) return;
                     const props = feature.properties;
                     const popupContent = `

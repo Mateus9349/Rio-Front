@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ICliente } from "../../interfaces/cliente.interface";
 import BotaoCadastro from "../BotaoCadastro";
 import useAtualizarCliente from "../../hooks/clientes/useAtualizarCliente";
+import { getErrorMessage } from "../../utils/errors";
 
 // Schema apenas para "nome"
 const schema = z.object({
@@ -50,8 +51,8 @@ export default function FormAtualizaCliente({
         try {
             await atualizarCliente(cliente.id, payload);
             onSuccess?.(payload);
-        } catch (e: any) {
-            setServerError(e?.message ?? "Falha ao atualizar o cliente.");
+        } catch (e: unknown) {
+            setServerError(getErrorMessage(e, "Falha ao atualizar o cliente."));
         }
     };
 

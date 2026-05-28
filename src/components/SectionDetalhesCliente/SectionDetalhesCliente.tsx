@@ -28,9 +28,18 @@ const normalizarTexto = (texto: string) =>
 // Aceita dados de SAF antigos (string[]) e novos ({url, ano}[])
 const toImagemSafArray = (v: unknown): IImagemSaf[] => {
     if (!Array.isArray(v)) return [];
-    return v.map((item: any) =>
-        typeof item === "string" ? ({ url: item, ano: undefined as any }) : item
-    );
+    return v.flatMap((item): IImagemSaf[] => {
+        if (typeof item === "string") {
+            return [{ url: item }];
+        }
+
+        if (typeof item === "object" && item !== null && "url" in item) {
+            const imagem = item as IImagemSaf;
+            return imagem.url ? [imagem] : [];
+        }
+
+        return [];
+    });
 };
 
 const uniqByUrl = (arr: IImagemSaf[]): IImagemSaf[] => {
@@ -80,7 +89,7 @@ export default function SectionDetalhesCliente({ id, plantios }: Props) {
     const clienteComImagem: ICliente | null = useMemo(() => {
         if (!cliente) return null;
         const found = plantios
-            .map((p) => p.cliente as ICliente)
+            .map((p) => p.cliente as unknown as ICliente)
             .find(
                 (c) =>
                     normalizarTexto(c.nome) === nomeClienteNorm &&
