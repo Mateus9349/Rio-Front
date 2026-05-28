@@ -11,12 +11,14 @@ import Proprietarios from "../pages/Proprietarios";
 import SAFs from "../pages/SAFs";
 import Plantios from "../pages/Plantios";
 import Mapa from "../pages/Mapa";
+import QrCodePage from "../pages/QrCodePage";
 
 const Rotas = () => (
   <AuthProvider>
     <BrowserRouter>
       <Routes>
         {/* Rota pública */}
+        <Route path="/QRCode" element={<QrCodePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Mapa />} />
 
