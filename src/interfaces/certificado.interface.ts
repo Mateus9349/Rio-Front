@@ -76,9 +76,9 @@ export interface ICreateCertificadoSafDto {
     safId: string;
     comunidadeId: string;
     proprietarioId: string;
-    tco2Compensadas: number;
+    tco2Compensadas: string;
     arvores: number;
-    areaM2: number;
+    areaM2: string;
 }
 
 export interface ICreateCertificadoDto extends ICreateCertificadoSafDto {

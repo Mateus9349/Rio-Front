@@ -30,6 +30,23 @@ const isValidNumber = (value: number | null | undefined) => {
     return typeof value === "number" && Number.isFinite(value);
 };
 
+
+const formatarDecimalParaDto = (value: number | string | null | undefined) => {
+    if (value === null || value === undefined || value === "") {
+        return "0";
+    }
+
+    const normalizedValue = String(value).trim().replace(",", ".");
+    const numericValue = Number(normalizedValue);
+
+    if (!Number.isFinite(numericValue) || numericValue < 0) {
+        throw new Error(`Valor decimal inválido: ${value}`);
+    }
+
+    const fixedValue = Number(numericValue.toFixed(2));
+    return String(fixedValue);
+};
+
 const finalizar = (
     ok: boolean,
     setVerificacaoFinalizada: (value: boolean) => void,
@@ -123,9 +140,9 @@ export default function FormPlantio({ certificado, onVerificacaoFinalizada }: Fo
                 safId: safExiste,
                 comunidadeId: comunidadeExiste,
                 proprietarioId: proprietarioExiste,
-                tco2Compensadas: Number(dados.tco2Compensadas || 0),
+                tco2Compensadas: formatarDecimalParaDto(dados.tco2Compensadas),
                 arvores: Number(dados.arvores || 0),
-                areaM2: Number(dados.areaM2 || 0),
+                areaM2: formatarDecimalParaDto(dados.areaM2),
             };
 
             const certificadoExistentePorCodigo = await buscarCertificadoPorCodigo(dados.codigo);
