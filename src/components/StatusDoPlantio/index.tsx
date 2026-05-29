@@ -11,16 +11,16 @@ export default function StatusDoPlantio({ certificadoCriado, errorCertificado, c
     return (
         <div>
             {certificadoCriado && !errorCertificado && !certificadoJaCriado && (
-                <p className="text-green-500 mt-2">✅ Plantio cadastrado com sucesso!</p>
+                <p className="text-green-500 mt-2">✅ Certificado cadastrado/atualizado com sucesso!</p>
             )}
 
             {certificadoJaCriado && (
-                <p className="text-red-500 mt-2">⚠️ Plantio com essas informações já consta no banco de dados.</p>
+                <p className="text-red-500 mt-2">⚠️ Certificado com esta SAF já consta no banco de dados.</p>
             )}
 
             {errorCertificado && (
                 <div className="text-red-500 mt-2">
-                    ❌ Erro ao criar plantio: {errorCertificado}
+                    ❌ Erro ao cadastrar certificado: {errorCertificado}
                     {onResetErro && (
                         <button onClick={onResetErro} className="ml-2 underline text-sm text-blue-600">
                             Tentar novamente

@@ -16,12 +16,14 @@ export default function useCreateCertificado() {
 
     const criarCertificado = async (
         payload: ICreateCertificadoDto
-    ): Promise<ICertificado | null> => {
+    ): Promise<ICertificado> => {
         try {
             setLoadingCreateCertificado(true);
             setErrorCreateCertificado(null);
 
+            console.log("Payload enviado para criar certificado:", payload);
             const response = await CertificadoService.criarCertificado(payload);
+            console.log("Resposta da criação do certificado:", response);
 
             setCertificadoCriado(response);
             return response;
@@ -33,7 +35,7 @@ export default function useCreateCertificado() {
             );
 
             setCertificadoCriado(null);
-            return null;
+            throw error;
         } finally {
             setLoadingCreateCertificado(false);
         }
