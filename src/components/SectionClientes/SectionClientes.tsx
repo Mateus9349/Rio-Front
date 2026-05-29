@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { ICliente } from "../../interfaces/cliente.interface";
-import { IPlantioBack } from "../../interfaces/plantioBack.interface";
+import type { ICertificado } from "../../interfaces/certificado.interface";
 import CardCliente from "../Cards/CardCliente/CardCliente";
-import styles from './SectionClientes.module.scss';
+import styles from "./SectionClientes.module.scss";
 
 interface ClienteComAno extends ICliente {
-    anoCompensacao: number;
+    ano: number;
+    codigoCertificado?: string;
 }
 
 interface Props {
     clientes: ICliente[];
-    plantios: IPlantioBack[];
-    selecionaCliente?: (id: string) => void;
+    certificados: ICertificado[];
+    selecionaCliente?: (codigoCertificado: string) => void;
 }
 
 const CLIENTES_POR_PAGINA = 9;
@@ -19,45 +20,52 @@ const CLIENTES_POR_PAGINA = 9;
 function normalizarNome(nome: string) {
     return nome
         .normalize("NFD")
-        .replace(/[̀-ͯ]/g, "")
+        .replace(/[\u0300-\u036f]/g, "")
         .replace(/\(.*?\)/g, "")
         .replace(/[^A-Z]/gi, "")
         .toUpperCase();
 }
 
-export default function SectionClientes({ clientes, plantios, selecionaCliente }: Props) {
+function certificadoMaisRecente(certificados: ICertificado[]) {
+    return [...certificados]
+        .filter((certificado) => certificado.codigo)
+        .sort((a, b) => (b.ano || 0) - (a.ano || 0))[0];
+}
+
+export default function SectionClientes({ clientes, certificados, selecionaCliente }: Props) {
     const [paginaAtual, setPaginaAtual] = useState(1);
     const nomeParaGrupo = new Map<string, ICliente[]>();
-    const clienteAnoMap = new Map<string, number>();
+    const certificadosPorCliente = new Map<string, ICertificado[]>();
 
-    // Mapear cada cliente com seu nome normalizado
     for (const cliente of clientes) {
         const nomeNorm = normalizarNome(cliente.nome);
         if (!nomeParaGrupo.has(nomeNorm)) nomeParaGrupo.set(nomeNorm, []);
         nomeParaGrupo.get(nomeNorm)!.push(cliente);
     }
 
-    // Determinar o ano de compensação mais recente por grupo
-    for (const [nomeNorm, grupo] of nomeParaGrupo.entries()) {
-        const ids = grupo.map(c => String(c.id));
-        const anos = plantios
-            .filter(p => ids.includes(String(p.cliente.id)))
-            .map(p => p.anoCompensacao);
-        clienteAnoMap.set(nomeNorm, anos.length ? Math.max(...anos) : 0);
+    for (const certificado of certificados) {
+        if (!certificado.cliente?.id) continue;
+        const clienteId = String(certificado.cliente.id);
+        if (!certificadosPorCliente.has(clienteId)) certificadosPorCliente.set(clienteId, []);
+        certificadosPorCliente.get(clienteId)!.push(certificado);
     }
 
-    // Para cada grupo, escolher o cliente com imagem se possível
-    const clientesFiltrados: ClienteComAno[] = Array.from(nomeParaGrupo.entries()).map(([nomeNorm, grupo]) => {
-        const comImagem = grupo.find(c => !!c.imagem);
+    const clientesFiltrados: ClienteComAno[] = Array.from(nomeParaGrupo.values()).map((grupo) => {
+        const certificadosDoGrupo = grupo.flatMap(
+            (cliente) => certificadosPorCliente.get(String(cliente.id)) ?? []
+        );
+        const certificadoRecente = certificadoMaisRecente(certificadosDoGrupo);
+        const comImagem = grupo.find((cliente) => !!cliente.imagem);
         const escolhido = comImagem || grupo[0];
+
         return {
             ...escolhido,
-            anoCompensacao: clienteAnoMap.get(nomeNorm) || 0,
+            ano: certificadoRecente?.ano || 0,
+            codigoCertificado: certificadoRecente?.codigo,
         };
     });
 
-    // Ordenar por ano de compensação (mais recentes primeiro)
-    clientesFiltrados.sort((a, b) => b.anoCompensacao - a.anoCompensacao);
+    clientesFiltrados.sort((a, b) => b.ano - a.ano);
 
     const totalPaginas = Math.ceil(clientesFiltrados.length / CLIENTES_POR_PAGINA);
     const inicio = (paginaAtual - 1) * CLIENTES_POR_PAGINA;
@@ -67,7 +75,14 @@ export default function SectionClientes({ clientes, plantios, selecionaCliente }
         <div className={styles.container}>
             <div className={styles.containerClientes}>
                 {clientesPagina.map((cliente) => (
-                    <div key={cliente.id} onClick={() => selecionaCliente?.(String(cliente.id))}>
+                    <div
+                        key={cliente.id}
+                        onClick={() => {
+                            if (cliente.codigoCertificado) {
+                                selecionaCliente?.(cliente.codigoCertificado);
+                            }
+                        }}
+                    >
                         <CardCliente cliente={cliente} />
                     </div>
                 ))}

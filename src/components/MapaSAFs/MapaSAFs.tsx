@@ -57,7 +57,11 @@ export const MapaSAFs: React.FC<MapaSAFsProps> = ({ safs, onSafClick }) => {
                 />
 
                 {safs.map((saf) => (
-                    <MarkerWithAction key={saf.id} saf={saf} onSafClick={onSafClick} />
+                    <MarkerWithAction
+                        key={saf.id ?? `${saf.identificacao}-${saf.latitude}-${saf.longitude}`}
+                        saf={saf}
+                        onSafClick={onSafClick}
+                    />
                 ))}
             </MapContainer>
         </div>

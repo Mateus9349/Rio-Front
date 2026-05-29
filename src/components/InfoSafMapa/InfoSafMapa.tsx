@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import ExibirImagem from "../ExibirImagem/ExibirImagem";
 import type { IImagemSaf, ISAF } from "../../interfaces/SAF.interface";
-import type { IPlantioBack } from "../../interfaces/plantioBack.interface";
-import usePlantios from "../../hooks/plantio/usePlantios";
+import type { ICertificado } from "../../interfaces/certificado.interface";
+import { extrairSafsDoCertificado } from "../../utils/certificadoSaf";
 import { removerEntreParenteses } from "../../utils/funcoes";
 
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -17,51 +17,58 @@ export type ImagensPorAno = Array<[anoLabel: string, lista: IImagemSaf[]]>;
 export type InfoSafMapaProps = {
     selectedSaf?: ISAF | null;
     imagensPorAno: ImagensPorAno;
+    certificados: ICertificado[];
     className?: string;
 };
 
 export default function InfoSafMapa({
     selectedSaf,
     imagensPorAno,
+    certificados,
     className,
 }: InfoSafMapaProps) {
-    const { plantios } = usePlantios();
-
-    // Plantios vinculados ao SAF selecionado
-    const plantiosDoSaf: IPlantioBack[] = useMemo(() => {
+    const certificadoSafsDoSaf = useMemo(() => {
         if (!selectedSaf?.id) return [];
-        return plantios.filter((p) => p.saf?.id === selectedSaf.id);
-    }, [plantios, selectedSaf?.id]);
 
-    // Soma total de árvores já plantadas naquele SAF
+        return certificados
+            .flatMap((certificado) => extrairSafsDoCertificado(certificado))
+            .filter((certificadoSaf) => certificadoSaf.saf?.id === selectedSaf.id);
+    }, [certificados, selectedSaf?.id]);
+
     const totalArvoresNoSaf = useMemo(() => {
-        return plantiosDoSaf.reduce((sum, p) => sum + (p.numeroArvores || 0), 0);
-    }, [plantiosDoSaf]);
+        return certificadoSafsDoSaf.reduce(
+            (sum, certificadoSaf) => sum + (certificadoSaf.arvores || 0),
+            0
+        );
+    }, [certificadoSafsDoSaf]);
 
-    // Proprietário(s) deduplicado(s) pelo id
     const proprietarios = useMemo(() => {
         const map = new Map<
             string,
             { id: string; nome: string; telefone?: string; email?: string }
         >();
-        for (const p of plantiosDoSaf) {
-            const pr = p.proprietario;
-            if (pr?.id && pr?.nome && !map.has(pr.id)) {
-                map.set(pr.id, {
-                    id: pr.id,
-                    nome: pr.nome,
-                    telefone: pr.telefone,
-                    email: pr.email,
+
+        for (const certificadoSaf of certificadoSafsDoSaf) {
+            const proprietario = certificadoSaf.proprietario;
+            const key = proprietario?.id ?? proprietario?.nome;
+
+            if (key && proprietario?.nome && !map.has(key)) {
+                map.set(key, {
+                    id: key,
+                    nome: proprietario.nome,
+                    telefone: proprietario.telefone,
+                    email: proprietario.email,
                 });
             }
         }
+
         return Array.from(map.values());
-    }, [plantiosDoSaf]);
+    }, [certificadoSafsDoSaf]);
 
     const proprietarioLabel = useMemo(() => {
         if (proprietarios.length === 0) return "—";
         if (proprietarios.length === 1) return proprietarios[0].nome;
-        return proprietarios.map((p) => p.nome).join(", ");
+        return proprietarios.map((proprietario) => proprietario.nome).join(", ");
     }, [proprietarios]);
 
     return (
@@ -86,12 +93,12 @@ export default function InfoSafMapa({
                         {totalArvoresNoSaf.toLocaleString("pt-BR")}
                     </span>
                 </div>
-                {plantiosDoSaf.length > 0 && (
+                {certificadoSafsDoSaf.length > 0 && (
                     <>
                         <div className="h-4 w-px bg-gray-200 hidden sm:block" />
                         <div className="text-gray-600">
-                            Plantios vinculados:{" "}
-                            <span className="font-medium">{plantiosDoSaf.length}</span>
+                            Certificados vinculados:{" "}
+                            <span className="font-medium">{certificadoSafsDoSaf.length}</span>
                         </div>
                     </>
                 )}
