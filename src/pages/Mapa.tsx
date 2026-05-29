@@ -1,7 +1,8 @@
 import styles from '../styles/Mapa.module.scss';
 import { useMemo, useState } from 'react';
-import usePlantios from '../hooks/plantio/usePlantios';
-import {useClientes} from '../hooks/clientes/useClientes';
+import useCertificados from '../hooks/certificados/useCertificados';
+import { useClientes } from '../hooks/clientes/useClientes';
+import { ICertificado } from '../interfaces/certificado.interface';
 import { ISAF, IImagemSaf } from '../interfaces/SAF.interface';
 import { MapaSAFs } from '../components/MapaSAFs/MapaSAFs';
 import SectionClientes from '../components/SectionClientes/SectionClientes';
@@ -12,80 +13,118 @@ import InfoSafMapa from '../components/InfoSafMapa/InfoSafMapa';
 
 function toImagemSafArray(v: unknown): IImagemSaf[] {
     if (!Array.isArray(v)) return [];
-    return v.map((item: any) =>
-        typeof item === 'string' ? { url: item, ano: undefined as any } : item
+
+    return v.reduce<IImagemSaf[]>((acc, item) => {
+        if (typeof item === 'string') {
+            acc.push({ url: item, ano: undefined });
+            return acc;
+        }
+
+        if (
+            typeof item === 'object' &&
+            item !== null &&
+            'url' in item &&
+            typeof item.url === 'string'
+        ) {
+            const ano =
+                'ano' in item && typeof item.ano === 'number'
+                    ? item.ano
+                    : undefined;
+            acc.push({ url: item.url, ano });
+        }
+
+        return acc;
+    }, []);
+}
+
+function normalizarCodigo(codigo: string) {
+    return codigo.trim().toUpperCase();
+}
+
+function coordenadasDoCertificado(certificado: ICertificado) {
+    const latitude = Number(
+        certificado.saf?.localizacao?.latitude ?? certificado.saf?.latitude ?? 0
     );
+    const longitude = Number(
+        certificado.saf?.localizacao?.longitude ?? certificado.saf?.longitude ?? 0
+    );
+
+    return { latitude, longitude };
 }
 
 export default function Mapa() {
-    const { plantios } = usePlantios();
+    const { certificados, loadingCertificados, errorCertificados } = useCertificados();
     const { clientes, loadingClientes } = useClientes();
-    const [clienteId, setClienteId] = useState('');
-    const [imagens, setImagens] = useState<IImagemSaf[]>([]); // mantém url+ano
+    const [codigoCertificado, setCodigoCertificado] = useState('');
+    const [imagens, setImagens] = useState<IImagemSaf[]>([]);
     const [selectedSaf, setSelectedSaf] = useState<ISAF>();
 
-    const clienteIdUpper = clienteId.trim().toUpperCase();
+    const codigoCertificadoUpper = normalizarCodigo(codigoCertificado);
 
-    const plantiosFiltrados = useMemo(() => {
-        if (!clienteIdUpper) return plantios;
-        return plantios.filter(p => p.cliente.id.toUpperCase() === clienteIdUpper);
-    }, [plantios, clienteIdUpper]);
+    const certificadosAtivos = useMemo(
+        () => certificados.filter((certificado) => certificado.ativo !== false),
+        [certificados]
+    );
 
-    const clientesFiltrados = useMemo(() => {
-  if (!clienteId) {
-    return [...clientes].sort((a, b) => a.nome.localeCompare(b.nome));
-  }
-
-  const clienteIdNumber = Number(clienteId);
-
-  if (Number.isNaN(clienteIdNumber)) {
-    return [];
-  }
-
-  return clientes.filter((cliente) => cliente.id === clienteIdNumber);
-}, [clientes, clienteId]);
+    const certificadosFiltrados = useMemo(() => {
+        if (!codigoCertificadoUpper) return certificadosAtivos;
+        return certificadosAtivos.filter(
+            (certificado) => normalizarCodigo(certificado.codigo) === codigoCertificadoUpper
+        );
+    }, [certificadosAtivos, codigoCertificadoUpper]);
 
     const safs: ISAF[] = useMemo(() => {
-        return plantiosFiltrados
-            .filter((p) => {
-                const lat = Number(p.saf?.latitude ?? 0);
-                const lng = Number(p.saf?.longitude ?? 0);
-                return !!p.saf && !Number.isNaN(lat) && !Number.isNaN(lng) && lat !== 0 && lng !== 0;
-            })
-            .map((p) => ({
-                id: p.saf!.id,
-                identificacao: p.saf!.identificacao,
-                latitude: Number(p.saf!.latitude),
-                longitude: Number(p.saf!.longitude),
-                imagens: toImagemSafArray(p.saf!.imagens), // mantém { url, ano }
-            }));
-    }, [plantiosFiltrados]);
+        const porSaf = new Map<string, ISAF>();
+
+        for (const certificado of certificadosFiltrados) {
+            const { latitude, longitude } = coordenadasDoCertificado(certificado);
+            const identificacao = certificado.saf?.identificacao;
+
+            if (!identificacao || Number.isNaN(latitude) || Number.isNaN(longitude) || latitude === 0 || longitude === 0) {
+                continue;
+            }
+
+            const chave = certificado.saf?.id ?? identificacao;
+            const imagensSaf = toImagemSafArray(certificado.saf?.imagens);
+            const safExistente = porSaf.get(chave);
+
+            if (safExistente) {
+                const urls = new Set((safExistente.imagens ?? []).map((imagem) => imagem.url));
+                safExistente.imagens = [
+                    ...(safExistente.imagens ?? []),
+                    ...imagensSaf.filter((imagem) => !urls.has(imagem.url)),
+                ];
+                continue;
+            }
+
+            porSaf.set(chave, {
+                id: certificado.saf?.id ?? chave,
+                identificacao,
+                latitude,
+                longitude,
+                imagens: imagensSaf,
+            });
+        }
+
+        return Array.from(porSaf.values());
+    }, [certificadosFiltrados]);
 
     const totais = useMemo(() => {
-        return plantiosFiltrados.reduce(
-            (acc, p) => {
-                const arvores = p.numeroArvores || 0;
-                const carbono = Number(p.tCO2Compensadas) || 0;
-                const areaM2 = Number(p.areaM2) || 0;
-                const areaHa = areaM2 / 10000;
-
-                return {
-                    arvores: acc.arvores + arvores,
-                    carbono: acc.carbono + carbono,
-                    area: acc.area + areaHa,
-                };
-            },
+        return certificadosFiltrados.reduce(
+            (acc, certificado) => ({
+                arvores: acc.arvores + (Number(certificado.arvores) || 0),
+                carbono: acc.carbono + (Number(certificado.tco2Compensadas) || 0),
+                area: acc.area + (Number(certificado.areaM2) || 0),
+            }),
             { arvores: 0, carbono: 0, area: 0 }
         );
-    }, [plantiosFiltrados]);
+    }, [certificadosFiltrados]);
 
-    // Ao clicar no SAF no mapa, guarda todas as imagens (com ano)
     const mostraImagens = (saf: ISAF) => {
         setImagens(toImagemSafArray(saf.imagens));
         setSelectedSaf(saf);
     };
 
-    // ---- AGRUPA POR ANO (ordem desc; "Sem ano" por último) ----
     const imagensPorAno = useMemo(() => {
         const map = new Map<string, IImagemSaf[]>();
         for (const img of imagens) {
@@ -99,8 +138,8 @@ export default function Mapa() {
         return Array.from(map.entries()).sort(([a], [b]) => {
             const na = Number(a), nb = Number(b);
             const aNum = Number.isFinite(na), bNum = Number.isFinite(nb);
-            if (aNum && bNum) return nb - na; // anos numéricos desc
-            if (aNum) return -1;              // num antes de "Sem ano"
+            if (aNum && bNum) return nb - na;
+            if (aNum) return -1;
             if (bNum) return 1;
             return a.localeCompare(b);
         });
@@ -112,13 +151,13 @@ export default function Mapa() {
                 <input
                     type="text"
                     placeholder="Insira o código informado no seu certificado"
-                    value={clienteId}
-                    onChange={(e) => setClienteId(e.target.value)}
+                    value={codigoCertificado}
+                    onChange={(e) => setCodigoCertificado(e.target.value)}
                     className={styles.input}
                 />
-                {clienteId && (
+                {codigoCertificado && (
                     <button
-                        onClick={() => setClienteId('')}
+                        onClick={() => setCodigoCertificado('')}
                         className={styles.btn}
                     >
                         Limpar
@@ -126,34 +165,37 @@ export default function Mapa() {
                 )}
             </div>
 
+            {errorCertificados && (
+                <p className="text-sm text-red-600 text-center">{errorCertificados}</p>
+            )}
+
             <section className="flex flex-col md:flex-row gap-6">
-                {/* Painel lateral */}
                 <div className="w-full md:w-[30%]">
                     <img src={imagemIdesam} alt="" style={{ justifySelf: 'center' }} />
 
-                    {clienteId ? (
+                    {codigoCertificado ? (
                         <SectionDetalhesCliente
-                            id={clienteId}
-                            plantios={plantios}
+                            codigo={codigoCertificado}
+                            certificados={certificadosAtivos}
+                            clientes={clientes}
                         />
                     ) : (
                         <>
                             <SomaDeDados totais={totais} />
 
-                            {loadingClientes ? (
-                                <p>Carregando clientes...</p>
+                            {loadingCertificados || loadingClientes ? (
+                                <p>Carregando certificados...</p>
                             ) : (
                                 <SectionClientes
-                                    clientes={clientesFiltrados}
-                                    plantios={plantiosFiltrados}
-                                    selecionaCliente={setClienteId}
+                                    clientes={clientes}
+                                    certificados={certificadosFiltrados}
+                                    selecionaCertificado={setCodigoCertificado}
                                 />
                             )}
                         </>
                     )}
                 </div>
 
-                {/* Mapa */}
                 <div className="w-full md:w-[70%]">
                     <MapaSAFs
                         safs={safs}
@@ -161,6 +203,7 @@ export default function Mapa() {
                     />
 
                     <InfoSafMapa
+                        certificados={certificadosFiltrados}
                         imagensPorAno={imagensPorAno}
                         selectedSaf={selectedSaf}
                     />

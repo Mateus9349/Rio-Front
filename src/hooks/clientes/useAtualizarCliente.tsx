@@ -6,15 +6,15 @@ export default function useAtualizarCliente() {
     const [loadingAtualizar, setLoadingAtualizar] = useState(false);
     const [erroAtualizar, setErroAtualizar] = useState<Error | null>(null);
 
-    const atualizarCliente = async (id: string, dados: Partial<ICliente>): Promise<ICliente | null> => {
+    const atualizarCliente = async (id: number, dados: Partial<ICliente>): Promise<ICliente | null> => {
         setLoadingAtualizar(true);
         setErroAtualizar(null);
 
         try {
             const clienteAtualizado = await ClienteService.atualizarCliente(id, dados);
             return clienteAtualizado;
-        } catch (erro: any) {
-            setErroAtualizar(erro);
+        } catch (erro: unknown) {
+            setErroAtualizar(erro instanceof Error ? erro : new Error("Erro ao atualizar cliente."));
             return null;
         } finally {
             setLoadingAtualizar(false);

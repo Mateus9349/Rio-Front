@@ -1,17 +1,18 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ICliente } from "../../interfaces/cliente.interface";
-import { IPlantioBack } from "../../interfaces/plantioBack.interface";
+import { ICertificado } from "../../interfaces/certificado.interface";
 import CardCliente from "../Cards/CardCliente/CardCliente";
 import styles from './SectionClientes.module.scss';
 
-interface ClienteComAno extends ICliente {
-    anoCompensacao: number;
+interface ClienteComCertificado extends ICliente {
+    anoCertificado: number;
+    codigoCertificado: string;
 }
 
 interface Props {
     clientes: ICliente[];
-    plantios: IPlantioBack[];
-    selecionaCliente?: (id: string) => void;
+    certificados: ICertificado[];
+    selecionaCertificado?: (codigo: string) => void;
 }
 
 const CLIENTES_POR_PAGINA = 9;
@@ -19,55 +20,72 @@ const CLIENTES_POR_PAGINA = 9;
 function normalizarNome(nome: string) {
     return nome
         .normalize("NFD")
-        .replace(/[̀-ͯ]/g, "")
+        .replace(/[\u0300-\u036f]/g, "")
         .replace(/\(.*?\)/g, "")
         .replace(/[^A-Z]/gi, "")
         .toUpperCase();
 }
 
-export default function SectionClientes({ clientes, plantios, selecionaCliente }: Props) {
+const criarClienteDoCertificado = (certificado: ICertificado): ICliente => ({
+    id: Number(certificado.cliente.id ?? 0),
+    nome: certificado.cliente.nome,
+    imagem: certificado.cliente.imagem,
+});
+
+export default function SectionClientes({ clientes, certificados, selecionaCertificado }: Props) {
     const [paginaAtual, setPaginaAtual] = useState(1);
-    const nomeParaGrupo = new Map<string, ICliente[]>();
-    const clienteAnoMap = new Map<string, number>();
 
-    // Mapear cada cliente com seu nome normalizado
-    for (const cliente of clientes) {
-        const nomeNorm = normalizarNome(cliente.nome);
-        if (!nomeParaGrupo.has(nomeNorm)) nomeParaGrupo.set(nomeNorm, []);
-        nomeParaGrupo.get(nomeNorm)!.push(cliente);
-    }
+    const clientesFiltrados = useMemo<ClienteComCertificado[]>(() => {
+        const clientesPorId = new Map(clientes.map((cliente) => [cliente.id, cliente]));
+        const grupos = new Map<string, ICertificado[]>();
 
-    // Determinar o ano de compensação mais recente por grupo
-    for (const [nomeNorm, grupo] of nomeParaGrupo.entries()) {
-        const ids = grupo.map(c => c.id);
-        const anos = plantios
-            .filter(p => ids.includes(p.cliente.id))
-            .map(p => p.anoCompensacao);
-        clienteAnoMap.set(nomeNorm, anos.length ? Math.max(...anos) : 0);
-    }
+        for (const certificado of certificados) {
+            const nomeNorm = normalizarNome(certificado.cliente.nome);
+            if (!nomeNorm) continue;
+            if (!grupos.has(nomeNorm)) grupos.set(nomeNorm, []);
+            grupos.get(nomeNorm)!.push(certificado);
+        }
 
-    // Para cada grupo, escolher o cliente com imagem se possível
-    const clientesFiltrados: ClienteComAno[] = Array.from(nomeParaGrupo.entries()).map(([nomeNorm, grupo]) => {
-        const comImagem = grupo.find(c => !!c.imagem);
-        const escolhido = comImagem || grupo[0];
-        return {
-            ...escolhido,
-            anoCompensacao: clienteAnoMap.get(nomeNorm) || 0,
-        };
-    });
+        return Array.from(grupos.values())
+            .map((certificadosDoCliente) => {
+                const certificadosOrdenados = [...certificadosDoCliente].sort(
+                    (a, b) => (Number(b.ano) || 0) - (Number(a.ano) || 0)
+                );
+                const certificadoMaisRecente = certificadosOrdenados[0];
+                const clienteId = certificadoMaisRecente.cliente.id;
+                const clienteCadastrado =
+                    typeof clienteId === "number" ? clientesPorId.get(clienteId) : undefined;
+                const cliente = clienteCadastrado ?? criarClienteDoCertificado(certificadoMaisRecente);
 
-    // Ordenar por ano de compensação (mais recentes primeiro)
-    clientesFiltrados.sort((a, b) => b.anoCompensacao - a.anoCompensacao);
+                return {
+                    ...cliente,
+                    anoCertificado: Number(certificadoMaisRecente.ano) || 0,
+                    codigoCertificado: certificadoMaisRecente.codigo,
+                };
+            })
+            .sort((a, b) => b.anoCertificado - a.anoCertificado || a.nome.localeCompare(b.nome));
+    }, [clientes, certificados]);
+
+    useEffect(() => {
+        setPaginaAtual(1);
+    }, [certificados.length, clientes.length]);
 
     const totalPaginas = Math.ceil(clientesFiltrados.length / CLIENTES_POR_PAGINA);
     const inicio = (paginaAtual - 1) * CLIENTES_POR_PAGINA;
     const clientesPagina = clientesFiltrados.slice(inicio, inicio + CLIENTES_POR_PAGINA);
 
+    if (!clientesFiltrados.length) {
+        return <p className="text-sm text-gray-500">Nenhum certificado encontrado.</p>;
+    }
+
     return (
         <div className={styles.container}>
             <div className={styles.containerClientes}>
                 {clientesPagina.map((cliente) => (
-                    <div key={cliente.id} onClick={() => selecionaCliente?.(cliente.id)}>
+                    <div
+                        key={`${cliente.codigoCertificado}-${cliente.id}-${cliente.nome}`}
+                        onClick={() => selecionaCertificado?.(cliente.codigoCertificado)}
+                    >
                         <CardCliente cliente={cliente} />
                     </div>
                 ))}

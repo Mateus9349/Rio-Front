@@ -50,8 +50,9 @@ export default function FormAtualizaCliente({
         try {
             await atualizarCliente(cliente.id, payload);
             onSuccess?.(payload);
-        } catch (e: any) {
-            setServerError(e?.message ?? "Falha ao atualizar o cliente.");
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : "Falha ao atualizar o cliente.";
+            setServerError(message);
         }
     };
 

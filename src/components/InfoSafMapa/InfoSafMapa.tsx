@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import ExibirImagem from "../ExibirImagem/ExibirImagem";
 import type { IImagemSaf, ISAF } from "../../interfaces/SAF.interface";
-import type { IPlantioBack } from "../../interfaces/plantioBack.interface";
-import usePlantios from "../../hooks/plantio/usePlantios";
+import type { ICertificado } from "../../interfaces/certificado.interface";
 import { removerEntreParenteses } from "../../utils/funcoes";
 
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -16,47 +15,59 @@ export type ImagensPorAno = Array<[anoLabel: string, lista: IImagemSaf[]]>;
 
 export type InfoSafMapaProps = {
     selectedSaf?: ISAF | null;
+    certificados: ICertificado[];
     imagensPorAno: ImagensPorAno;
     className?: string;
 };
 
+const mesmoSaf = (certificado: ICertificado, selectedSaf: ISAF) => {
+    if (selectedSaf.id && certificado.saf?.id) {
+        return certificado.saf.id === selectedSaf.id;
+    }
+
+    return certificado.saf?.identificacao === selectedSaf.identificacao;
+};
+
 export default function InfoSafMapa({
     selectedSaf,
+    certificados,
     imagensPorAno,
     className,
 }: InfoSafMapaProps) {
-    const { plantios } = usePlantios();
+    const certificadosDoSaf = useMemo(() => {
+        if (!selectedSaf) return [];
+        return certificados.filter((certificado) => mesmoSaf(certificado, selectedSaf));
+    }, [certificados, selectedSaf]);
 
-    // Plantios vinculados ao SAF selecionado
-    const plantiosDoSaf: IPlantioBack[] = useMemo(() => {
-        if (!selectedSaf?.id) return [];
-        return plantios.filter((p) => p.saf?.id === selectedSaf.id);
-    }, [plantios, selectedSaf?.id]);
-
-    // Soma total de árvores já plantadas naquele SAF
     const totalArvoresNoSaf = useMemo(() => {
-        return plantiosDoSaf.reduce((sum, p) => sum + (p.numeroArvores || 0), 0);
-    }, [plantiosDoSaf]);
+        return certificadosDoSaf.reduce(
+            (sum, certificado) => sum + (Number(certificado.arvores) || 0),
+            0
+        );
+    }, [certificadosDoSaf]);
 
-    // Proprietário(s) deduplicado(s) pelo id
     const proprietarios = useMemo(() => {
         const map = new Map<
             string,
             { id: string; nome: string; telefone?: string; email?: string }
         >();
-        for (const p of plantiosDoSaf) {
-            const pr = p.proprietario;
-            if (pr?.id && pr?.nome && !map.has(pr.id)) {
-                map.set(pr.id, {
-                    id: pr.id,
-                    nome: pr.nome,
-                    telefone: pr.telefone,
-                    email: pr.email,
+
+        for (const certificado of certificadosDoSaf) {
+            const proprietario = certificado.proprietario;
+            const chave = proprietario?.id || proprietario?.nome;
+
+            if (chave && proprietario?.nome && !map.has(chave)) {
+                map.set(chave, {
+                    id: proprietario.id || chave,
+                    nome: proprietario.nome,
+                    telefone: proprietario.telefone,
+                    email: proprietario.email,
                 });
             }
         }
+
         return Array.from(map.values());
-    }, [plantiosDoSaf]);
+    }, [certificadosDoSaf]);
 
     const proprietarioLabel = useMemo(() => {
         if (proprietarios.length === 0) return "—";
@@ -70,7 +81,6 @@ export default function InfoSafMapa({
                 Informações do {selectedSaf?.identificacao ?? "SAF"}
             </h1>
 
-            {/* Resumo do SAF selecionado */}
             <div className="rounded border bg-white/50 p-3 flex flex-wrap items-center gap-4 text-sm">
                 <div>
                     <span className="text-gray-600">Proprietário(a): </span>
@@ -86,12 +96,12 @@ export default function InfoSafMapa({
                         {totalArvoresNoSaf.toLocaleString("pt-BR")}
                     </span>
                 </div>
-                {plantiosDoSaf.length > 0 && (
+                {certificadosDoSaf.length > 0 && (
                     <>
                         <div className="h-4 w-px bg-gray-200 hidden sm:block" />
                         <div className="text-gray-600">
-                            Plantios vinculados:{" "}
-                            <span className="font-medium">{plantiosDoSaf.length}</span>
+                            Certificados vinculados:{" "}
+                            <span className="font-medium">{certificadosDoSaf.length}</span>
                         </div>
                     </>
                 )}
@@ -99,7 +109,6 @@ export default function InfoSafMapa({
 
             {imagensPorAno.map(([anoLabel, lista]) => (
                 <section key={anoLabel}>
-                    {/* Divider com o ano + contagem */}
                     <div className="flex items-center gap-3 my-2">
                         <div className="h-px flex-1 bg-gray-200" />
                         <span className="text-xs font-medium uppercase text-gray-600">
@@ -108,7 +117,6 @@ export default function InfoSafMapa({
                         <div className="h-px flex-1 bg-gray-200" />
                     </div>
 
-                    {/* Carrossel horizontal de imagens do ano */}
                     <Swiper
                         modules={[Navigation, Pagination]}
                         spaceBetween={12}
@@ -119,7 +127,7 @@ export default function InfoSafMapa({
                             640: { slidesPerView: 2.2 },
                             1024: { slidesPerView: 3.2 },
                         }}
-                        className="!px-1" // pequeno padding lateral
+                        className="!px-1"
                     >
                         {lista.map((img: IImagemSaf) => (
                             <SwiperSlide key={`${img.url}-${img.ano ?? "na"}`}>

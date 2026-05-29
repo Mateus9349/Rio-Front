@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import CardCliente from "../Cards/CardCliente/CardCliente";
-import ClienteService from "../../services/ClienteService";
 import SomaDeDados from "../SomaDeDados/SomaDeDados";
 import ExibirImagem from "../ExibirImagem/ExibirImagem";
 import type { ICliente } from "../../interfaces/cliente.interface";
-import type { IPlantioBack } from "../../interfaces/plantioBack.interface";
+import type { ICertificado } from "../../interfaces/certificado.interface";
 import type { IImagemSaf } from "../../interfaces/SAF.interface";
 
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -14,23 +13,38 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 interface Props {
-    id: string;
-    plantios: IPlantioBack[];
+    codigo: string;
+    certificados: ICertificado[];
+    clientes: ICliente[];
 }
 
-const normalizarTexto = (texto: string) =>
-    texto
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^A-Z]/gi, "")
-        .toUpperCase();
+const normalizarCodigo = (codigo: string) => codigo.trim().toUpperCase();
 
 // Aceita dados de SAF antigos (string[]) e novos ({url, ano}[])
 const toImagemSafArray = (v: unknown): IImagemSaf[] => {
     if (!Array.isArray(v)) return [];
-    return v.map((item: any) =>
-        typeof item === "string" ? ({ url: item, ano: undefined as any }) : item
-    );
+
+    return v.reduce<IImagemSaf[]>((acc, item) => {
+        if (typeof item === "string") {
+            acc.push({ url: item, ano: undefined });
+            return acc;
+        }
+
+        if (
+            typeof item === "object" &&
+            item !== null &&
+            "url" in item &&
+            typeof item.url === "string"
+        ) {
+            const ano =
+                "ano" in item && typeof item.ano === "number"
+                    ? item.ano
+                    : undefined;
+            acc.push({ url: item.url, ano });
+        }
+
+        return acc;
+    }, []);
 };
 
 const uniqByUrl = (arr: IImagemSaf[]): IImagemSaf[] => {
@@ -45,108 +59,78 @@ const uniqByUrl = (arr: IImagemSaf[]): IImagemSaf[] => {
     return out;
 };
 
-export default function SectionDetalhesCliente({ id, plantios }: Props) {
-    const [cliente, setCliente] = useState<ICliente | null>(null);
+const criarClienteDoCertificado = (certificado: ICertificado): ICliente => ({
+    id: Number(certificado.cliente.id ?? 0),
+    nome: certificado.cliente.nome,
+    imagem: certificado.cliente.imagem,
+});
+
+export default function SectionDetalhesCliente({ codigo, certificados, clientes }: Props) {
     const [anoSelecionado, setAnoSelecionado] = useState<number | "TODOS">("TODOS");
+    const codigoNormalizado = normalizarCodigo(codigo);
 
-    // Busca cliente
-    useEffect(() => {
-        let alive = true;
-        (async () => {
-            try {
-                const dados = await ClienteService.buscarCliente(id.toUpperCase());
-                if (alive) setCliente(dados);
-            } catch (erro) {
-                console.error("Erro ao buscar cliente:", erro);
-            }
-        })();
-        return () => {
-            alive = false;
-        };
-    }, [id]);
+    const certificadosDoCodigo = useMemo(() => {
+        if (!codigoNormalizado) return [];
+        return certificados.filter(
+            (certificado) => normalizarCodigo(certificado.codigo) === codigoNormalizado
+        );
+    }, [certificados, codigoNormalizado]);
 
-    const nomeClienteNorm = useMemo(
-        () => (cliente ? normalizarTexto(cliente.nome) : ""),
-        [cliente]
-    );
+    const certificadoReferencia = certificadosDoCodigo[0];
 
-    // Plantios pertencentes ao cliente
-    const plantiosDoCliente = useMemo(() => {
-        if (!nomeClienteNorm) return [];
-        return plantios.filter((p) => normalizarTexto(p.cliente.nome) === nomeClienteNorm);
-    }, [plantios, nomeClienteNorm]);
-
-    // Cliente com imagem (fallback no cliente sem imagem)
     const clienteComImagem: ICliente | null = useMemo(() => {
-        if (!cliente) return null;
-        const found = plantios
-            .map((p) => p.cliente as ICliente)
-            .find(
-                (c) =>
-                    normalizarTexto(c.nome) === nomeClienteNorm &&
-                    c.imagem &&
-                    c.imagem.trim() !== ""
-            );
-        return found || cliente;
-    }, [cliente, plantios, nomeClienteNorm]);
+        if (!certificadoReferencia) return null;
+        const clienteId = certificadoReferencia.cliente.id;
+        const clienteCadastrado =
+            typeof clienteId === "number" ? clientes.find((cliente) => cliente.id === clienteId) : undefined;
+        return clienteCadastrado ?? criarClienteDoCertificado(certificadoReferencia);
+    }, [certificadoReferencia, clientes]);
 
-    // Anos para filtro (derivados dos plantios do cliente)
     const anosDisponiveis = useMemo(() => {
-        const anos = plantiosDoCliente
-            .map((p) => p.anoCompensacao)
-            .filter((a): a is number => typeof a === "number" && Number.isFinite(a));
+        const anos = certificadosDoCodigo
+            .map((certificado) => Number(certificado.ano))
+            .filter((ano): ano is number => Number.isFinite(ano));
         return Array.from(new Set(anos)).sort((a, b) => b - a);
-    }, [plantiosDoCliente]);
+    }, [certificadosDoCodigo]);
 
-    // Imagens dos SAFs a partir dos plantios (sem useSafs)
+    const certificadosFiltrados = useMemo(() => {
+        if (anoSelecionado === "TODOS") return certificadosDoCodigo;
+        return certificadosDoCodigo.filter((certificado) => Number(certificado.ano) === anoSelecionado);
+    }, [certificadosDoCodigo, anoSelecionado]);
+
+    const totais = useMemo(() => {
+        return certificadosFiltrados.reduce(
+            (acc, certificado) => ({
+                arvores: acc.arvores + (Number(certificado.arvores) || 0),
+                carbono: acc.carbono + (Number(certificado.tco2Compensadas) || 0),
+                area: acc.area + (Number(certificado.areaM2) || 0),
+            }),
+            { arvores: 0, carbono: 0, area: 0 }
+        );
+    }, [certificadosFiltrados]);
+
     const imagensDoCliente = useMemo(() => {
-        const todas: IImagemSaf[] = plantiosDoCliente.flatMap((p) =>
-            toImagemSafArray(p.saf?.imagens)
+        const todas = certificadosFiltrados.flatMap((certificado) =>
+            toImagemSafArray(certificado.saf?.imagens)
         );
 
-        const anosValidos = new Set(anosDisponiveis);
-
-        const base =
-            anoSelecionado === "TODOS"
-                ? todas.filter((i) => typeof i.ano === "number" && anosValidos.has(i.ano))
-                : todas.filter((i) => i.ano === anoSelecionado);
-
-        const unicas = uniqByUrl(base);
-
-        unicas.sort((a, b) => {
+        return uniqByUrl(todas).sort((a, b) => {
             const aa = typeof a.ano === "number" ? a.ano : -Infinity;
             const bb = typeof b.ano === "number" ? b.ano : -Infinity;
             return bb - aa;
         });
+    }, [certificadosFiltrados]);
 
-        return unicas;
-    }, [plantiosDoCliente, anoSelecionado, anosDisponiveis]);
-
-    // Totais (seguem o filtro de ano dos plantios)
-    const plantiosFiltrados = useMemo(() => {
-        if (anoSelecionado === "TODOS") return plantiosDoCliente;
-        return plantiosDoCliente.filter((p) => p.anoCompensacao === anoSelecionado);
-    }, [plantiosDoCliente, anoSelecionado]);
-
-    const totais = useMemo(() => {
-        return plantiosFiltrados.reduce(
-            (acc, p) => {
-                const arvores = p.numeroArvores || 0;
-                const carbono = Number(p.tCO2Compensadas) || 0;
-                const areaM2 = Number(p.areaM2) || 0;
-                const areaHa = areaM2 / 10000;
-                return {
-                    arvores: acc.arvores + arvores,
-                    carbono: acc.carbono + carbono,
-                    area: acc.area + areaHa,
-                };
-            },
-            { arvores: 0, carbono: 0, area: 0 }
+    if (!certificadosDoCodigo.length) {
+        return (
+            <p className="text-sm text-gray-500">
+                Nenhum certificado encontrado para o código informado.
+            </p>
         );
-    }, [plantiosFiltrados]);
+    }
 
     if (!clienteComImagem) {
-        return <p>Carregando informações do cliente...</p>;
+        return <p>Carregando informações do certificado...</p>;
     }
 
     return (
@@ -174,7 +158,6 @@ export default function SectionDetalhesCliente({ id, plantios }: Props) {
 
             <SomaDeDados totais={totais} />
 
-            {/* Carrossel de imagens filtradas por ano (direto dos plantios) */}
             {imagensDoCliente.length > 0 ? (
                 <div className="w-full">
                     <Swiper
@@ -209,7 +192,7 @@ export default function SectionDetalhesCliente({ id, plantios }: Props) {
             ) : (
                 <p className="text-sm text-gray-500">
                     {anoSelecionado === "TODOS"
-                        ? "Nenhuma imagem encontrada para este cliente."
+                        ? "Nenhuma imagem encontrada para este certificado."
                         : "Nenhuma imagem encontrada para o ano selecionado."}
                 </p>
             )}

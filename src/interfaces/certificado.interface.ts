@@ -1,3 +1,5 @@
+import type { IImagemSaf } from './SAF.interface';
+
 export interface ICertificado {
     id?: string;
     codigo: string;
@@ -12,6 +14,7 @@ export interface ICertificado {
     cliente: {
         id?: number;
         nome: string;
+        imagem?: string;
     };
 
     saf: {
@@ -21,6 +24,9 @@ export interface ICertificado {
             latitude: number | null;
             longitude: number | null;
         };
+        latitude?: number | string | null;
+        longitude?: number | string | null;
+        imagens?: IImagemSaf[] | string[];
     };
 
     comunidade: {
@@ -31,6 +37,8 @@ export interface ICertificado {
     proprietario: {
         id?: string;
         nome: string;
+        telefone?: string;
+        email?: string;
     };
 }
 
@@ -47,8 +55,7 @@ export interface ICreateCertificadoDto {
     ativo?: boolean;
 }
 
-export interface IUpdateCertificadoDto
-    extends Partial<ICreateCertificadoDto> { }
+export type IUpdateCertificadoDto = Partial<ICreateCertificadoDto>;
 
 export interface IVerificarExistenciaCertificadoResponse {
     exists: boolean;
