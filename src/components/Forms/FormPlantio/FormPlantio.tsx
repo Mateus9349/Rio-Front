@@ -1,10 +1,5 @@
 // FormPlantio.tsx
 import { useCallback, useEffect, useRef, useState } from "react";
-/* import { IPlantioCompleto } from "../../../interfaces/plantioCompleto.interface";
-import { IPlantio } from "../../../interfaces/plantio.interface";
-import PlantioService from "../../../services/PlantioService";
-import useCriaPlantio from "../../../hooks/plantio/usecriaPlantio";
-import { da } from "zod/v4/locales"; */
 import { normalizar } from "../../../utils/funcoes";
 import StatusDoPlantio from "../../StatusDoPlantio";
 import ClientPart from "../../Parts/ClientePart";
@@ -12,9 +7,13 @@ import SAFPart from "../../Parts/SAFPart";
 import ComunidadePart from "../../Parts/ComunidadePart";
 import ProdutorPart from "../../Parts/ProdutorPart";
 import PlantioPart from "../../Parts/PlantioPart";
-import { ICertificado, ICreateCertificadoDto } from "../../../interfaces/certificado.interface";
-import { useVerificaExisteCertificado } from "../../../hooks/certificados/useVerificaExistenciaCertificado";
-import useCreateCertificado from "../../../hooks/certificados/useCreateCertificado";
+import type {
+    ICertificado,
+    ICreateCertificadoDto,
+    ICreateCertificadoSafDto,
+} from "../../../interfaces/certificado.interface";
+import useCertificados from "../../../hooks/certificados/useCertificados";
+import { getErrorMessage } from "../../../utils/errors";
 
 interface FormPlantioProps {
     certificado: ICertificado;
@@ -28,12 +27,22 @@ const isValidString = (value: string | null | undefined) => {
 };
 
 const isValidNumber = (value: number | null | undefined) => {
-    return typeof value === "number";
+    return typeof value === "number" && Number.isFinite(value);
+};
+
+const finalizar = (
+    ok: boolean,
+    setVerificacaoFinalizada: (value: boolean) => void,
+    onVerificacaoFinalizada?: (ok: boolean) => void
+) => {
+    setVerificacaoFinalizada(true);
+    onVerificacaoFinalizada?.(ok);
 };
 
 export default function FormPlantio({ certificado, onVerificacaoFinalizada }: FormPlantioProps) {
     const [dados] = useState<ICertificado>(() => ({
         ...certificado,
+        codigo: normalizar(certificado.codigo),
         cliente: {
             ...certificado.cliente,
             nome: normalizar(certificado.cliente.nome),
@@ -57,28 +66,31 @@ export default function FormPlantio({ certificado, onVerificacaoFinalizada }: Fo
     const [comunidadeExiste, setComunidadeExiste] = useState<UUID | null>(null);
     const [proprietarioExiste, setProprietarioExiste] = useState<UUID | null>(null);
     const [certificadoExiste, setCertificadoExiste] = useState(false);
-    /* const [verificando, setVerificando] = useState(false); */
+    const [certificadoCriado, setCertificadoCriado] = useState<ICertificado | null>(null);
+    const [erroCertificado, setErroCertificado] = useState<string | null>(null);
+    const [processandoCertificado, setProcessandoCertificado] = useState(false);
     const [verificacaoFinalizada, setVerificacaoFinalizada] = useState(false);
     const processamentoIniciadoRef = useRef(false);
 
     const {
-        verificarExisteCertificado,
-        loadingVerificaExistencia
-    } = useVerificaExisteCertificado();
-    const {
+        buscarCertificadoPorCodigo,
+        verificarExistenciaPorCodigoESaf,
         criarCertificado,
-        resetCreateCertificado,
-        errorCreateCertificado,
-        certificadoCriado,
-        loadingCreateCertificado
-    } = useCreateCertificado();
+        adicionarSafAoCertificado,
+    } = useCertificados();
 
-    const handleClienteExiste = useCallback(setClienteExiste, []);
-    const handleSafExiste = useCallback(setSafExiste, []);
-    const handleComunidadeExiste = useCallback(setComunidadeExiste, []);
-    const handleProprietarioExiste = useCallback(setProprietarioExiste, []);
+    const handleClienteExiste = useCallback((id: number | null) => setClienteExiste(id), []);
+    const handleSafExiste = useCallback((id: string) => setSafExiste(id), []);
+    const handleComunidadeExiste = useCallback((id: string) => setComunidadeExiste(id), []);
+    const handleProprietarioExiste = useCallback((id: string) => setProprietarioExiste(id), []);
 
-    const processarCertificado = async () => {
+    const resetErroCertificado = useCallback(() => {
+        setErroCertificado(null);
+        setVerificacaoFinalizada(false);
+        processamentoIniciadoRef.current = false;
+    }, []);
+
+    const processarCertificado = useCallback(async () => {
         if (
             clienteExiste === null ||
             safExiste === null ||
@@ -88,39 +100,107 @@ export default function FormPlantio({ certificado, onVerificacaoFinalizada }: Fo
             return;
         }
 
-        resetCreateCertificado();
+        setProcessandoCertificado(true);
+        setErroCertificado(null);
+        setCertificadoCriado(null);
+        setCertificadoExiste(false);
 
         try {
-            const existe = await verificarExisteCertificado(dados.codigo, dados.saf.identificacao);
-            const jaExiste = Boolean(existe);
+            const respostaExistencia = await verificarExistenciaPorCodigoESaf(
+                dados.codigo,
+                dados.saf.identificacao
+            );
+            const jaExiste = respostaExistencia?.existe === true;
 
             setCertificadoExiste(jaExiste);
 
             if (jaExiste) {
-                setVerificacaoFinalizada(true);
-                onVerificacaoFinalizada?.(true);
+                finalizar(true, setVerificacaoFinalizada, onVerificacaoFinalizada);
                 return;
-            } else {
-                const payload: ICreateCertificadoDto = {
-                    codigo: dados.codigo,
-                    clienteId: clienteExiste,
-                    safId: safExiste,
-                    comunidadeId: comunidadeExiste,
-                    proprietarioId: proprietarioExiste,
-                    ano: dados.ano,
-                    tco2Compensadas: String(dados.tco2Compensadas || 0),
-                    arvores: dados.arvores,
-                    areaM2: String(dados.areaM2),
-                };
-
-                await criarCertificado(payload);
             }
-        } catch (error) {
+
+            const payloadSaf: ICreateCertificadoSafDto = {
+                safId: safExiste,
+                comunidadeId: comunidadeExiste,
+                proprietarioId: proprietarioExiste,
+                tco2Compensadas: Number(dados.tco2Compensadas || 0),
+                arvores: Number(dados.arvores || 0),
+                areaM2: Number(dados.areaM2 || 0),
+            };
+
+            const certificadoExistentePorCodigo = await buscarCertificadoPorCodigo(dados.codigo);
+
+            if (certificadoExistentePorCodigo?.id) {
+                if (
+                    certificadoExistentePorCodigo.cliente?.id &&
+                    Number(certificadoExistentePorCodigo.cliente.id) !== Number(clienteExiste)
+                ) {
+                    throw new Error(
+                        "Conflito: já existe certificado com este código para outro cliente."
+                    );
+                }
+
+                if (
+                    certificadoExistentePorCodigo.ano &&
+                    Number(certificadoExistentePorCodigo.ano) !== Number(dados.ano)
+                ) {
+                    throw new Error(
+                        "Conflito: já existe certificado com este código para outro ano."
+                    );
+                }
+
+                console.log("Payload enviado para criar certificado:", payloadSaf);
+                const response = await adicionarSafAoCertificado(
+                    certificadoExistentePorCodigo.id,
+                    payloadSaf
+                );
+                console.log("Resposta da criação do certificado:", response);
+
+                if (!response?.id) {
+                    throw new Error("SAF não foi anexada ao certificado no backend.");
+                }
+
+                setCertificadoCriado(certificadoExistentePorCodigo);
+                finalizar(true, setVerificacaoFinalizada, onVerificacaoFinalizada);
+                return;
+            }
+
+            const payload: ICreateCertificadoDto = {
+                codigo: dados.codigo,
+                clienteId: clienteExiste,
+                ano: Number(dados.ano || 0),
+                ...payloadSaf,
+            };
+
+            console.log("Payload enviado para criar certificado:", payload);
+            const certificadoCriadoResponse = await criarCertificado(payload);
+            console.log("Resposta da criação do certificado:", certificadoCriadoResponse);
+
+            if (!certificadoCriadoResponse?.id) {
+                throw new Error("Certificado não foi criado no backend.");
+            }
+
+            setCertificadoCriado(certificadoCriadoResponse);
+            finalizar(true, setVerificacaoFinalizada, onVerificacaoFinalizada);
+        } catch (error: unknown) {
             console.error("Erro ao verificar/criar certificado:", error);
-            setVerificacaoFinalizada(true);
-            onVerificacaoFinalizada?.(false);
+            setErroCertificado(getErrorMessage(error, "Erro ao verificar/criar certificado."));
+            finalizar(false, setVerificacaoFinalizada, onVerificacaoFinalizada);
+        } finally {
+            setProcessandoCertificado(false);
         }
-    };
+    }, [
+        adicionarSafAoCertificado,
+        buscarCertificadoPorCodigo,
+        clienteExiste,
+        comunidadeExiste,
+        dados,
+        onVerificacaoFinalizada,
+        proprietarioExiste,
+        safExiste,
+        verificarExistenciaPorCodigoESaf,
+        criarCertificado,
+    ]);
 
     useEffect(() => {
         const idsProntos =
@@ -134,31 +214,16 @@ export default function FormPlantio({ certificado, onVerificacaoFinalizada }: Fo
 
         processamentoIniciadoRef.current = true;
         processarCertificado();
-    }, [clienteExiste, safExiste, comunidadeExiste, proprietarioExiste]);
-
-    useEffect(() => {
-        if (certificadoCriado) {
-            setVerificacaoFinalizada(true);
-            onVerificacaoFinalizada?.(true);
-        }
-    }, [certificadoCriado, onVerificacaoFinalizada]);
-
-    useEffect(() => {
-        if (errorCreateCertificado) {
-            setVerificacaoFinalizada(true);
-            onVerificacaoFinalizada?.(false);
-        }
-    }, [errorCreateCertificado, onVerificacaoFinalizada]);
+    }, [clienteExiste, safExiste, comunidadeExiste, proprietarioExiste, processarCertificado]);
 
     return (
         <div className="w-[1100px] mx-auto p-6">
-            <h2 className="text-2xl font-bold mb-6 text-center">Visualização do Plantio</h2>
+            <h2 className="text-2xl font-bold mb-6 text-center">Visualização do Certificado</h2>
 
             <div className="flex gap-6 items-start">
                 <div className="w-[60%] bg-white rounded-xl shadow-md p-6 border">
                     <form className="grid grid-cols-2 gap-4">
                         <ClientPart
-                            /* cliente_id={dados.ID_Cliente} */
                             cliente={dados.cliente.nome}
                             onChangeExistencia={handleClienteExiste}
                         />
@@ -187,17 +252,17 @@ export default function FormPlantio({ certificado, onVerificacaoFinalizada }: Fo
                 <div className="w-[40%] bg-white rounded-xl shadow-md p-6 border h-fit">
                     <StatusDoPlantio
                         certificadoJaCriado={certificadoExiste}
-                        errorCertificado={errorCreateCertificado}
+                        errorCertificado={erroCertificado}
                         certificadoCriado={certificadoCriado}
-                        onResetErro={resetCreateCertificado}
+                        onResetErro={resetErroCertificado}
                     />
 
-                    {loadingVerificaExistencia || loadingCreateCertificado && (
+                    {processandoCertificado && (
                         <p className="text-blue-600 mt-2">🔄 Verificando informações, por favor aguarde...</p>
                     )}
 
-                    {verificacaoFinalizada && !loadingVerificaExistencia && !certificadoCriado && !certificadoExiste && (
-                        <p className="text-yellow-600 mt-2">⚠️ Plantio ainda não cadastrado.</p>
+                    {verificacaoFinalizada && !processandoCertificado && !certificadoCriado && !certificadoExiste && !erroCertificado && (
+                        <p className="text-yellow-600 mt-2">⚠️ Certificado ainda não cadastrado.</p>
                     )}
                 </div>
             </div>

@@ -26,7 +26,7 @@ export default function TabelaPlantios({ dados, recarrega }: Props) {
     useVerificaExisteCertificado();
 
   const [statusCadastro, setStatusCadastro] = useState<StatusCadastro[]>([]);
-  const [plantioSelecionado, setPlantioSelecionado] =
+  const [certificadoSelecionado, setCertificadoSelecionado] =
     useState<ICertificado | null>(null);
 
   const normalizarCertificado = useCallback((certificado: ICertificado): ICertificado => {
@@ -101,7 +101,7 @@ export default function TabelaPlantios({ dados, recarrega }: Props) {
             certificado.saf.identificacao
           );
 
-          return Boolean(existe);
+          return existe?.existe === true;
         } catch (error) {
           console.error(
             "Erro ao verificar certificado na tabela:",
@@ -130,7 +130,7 @@ export default function TabelaPlantios({ dados, recarrega }: Props) {
   }, [verificarStatusCertificados, recarrega]);
 
   const handleCadastroFinalizado = async () => {
-    setPlantioSelecionado(null);
+    setCertificadoSelecionado(null);
     await verificarStatusCertificados();
   };
 
@@ -140,13 +140,13 @@ export default function TabelaPlantios({ dados, recarrega }: Props) {
         <TabelaHeader />
 
         <tbody>
-          {dados.map((plantio, index) => (
+          {dados.map((certificado, index) => (
             <LinhaPlantio
-              key={`${plantio.codigo}-${plantio.saf.identificacao}-${index}`}
-              plantio={plantio}
+              key={`${certificado.codigo}-${certificado.saf.identificacao}-${index}`}
+              certificado={certificado}
               status={statusCadastro[index] ?? "aguardando"}
               onCadastrar={() =>
-                setPlantioSelecionado(normalizarCertificado(plantio))
+                setCertificadoSelecionado(normalizarCertificado(certificado))
               }
             />
           ))}
@@ -159,11 +159,11 @@ export default function TabelaPlantios({ dados, recarrega }: Props) {
         </p>
       )}
 
-      {plantioSelecionado && (
+      {certificadoSelecionado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-4xl">
             <FormPlantio
-              certificado={plantioSelecionado}
+              certificado={certificadoSelecionado}
               onVerificacaoFinalizada={handleCadastroFinalizado}
             />
           </div>
