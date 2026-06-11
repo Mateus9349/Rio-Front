@@ -72,22 +72,25 @@ export interface ICertificado {
     };
 }
 
-export interface ICreateCertificadoDto {
-    codigo: string;
-    clienteId: number;
+export interface ICreateCertificadoSafDto {
     safId: string;
     comunidadeId: string;
     proprietarioId: string;
-    ano: number;
     tco2Compensadas: string;
     arvores: number;
     areaM2: string;
+}
+
+export interface ICreateCertificadoDto extends ICreateCertificadoSafDto {
+    codigo: string;
+    clienteId: number;
+    ano: number;
     ativo?: boolean;
 }
 
 export type IUpdateCertificadoDto = Partial<ICreateCertificadoDto>;
 
 export interface IVerificarExistenciaCertificadoResponse {
-    exists: boolean;
-    codigo: string;
+    existe: boolean;
+    certificado?: ICertificado | null;
 }

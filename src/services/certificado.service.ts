@@ -2,12 +2,25 @@ import api from './api.service';
 import { getErrorStatus } from '../utils/errors';
 import {
     ICertificado,
+    ICertificadoSaf,
     ICreateCertificadoDto,
+    ICreateCertificadoSafDto,
     IUpdateCertificadoDto,
     IVerificarExistenciaCertificadoResponse,
 } from '../interfaces/certificado.interface';
 
 const BASE_URL = '/certificados';
+
+type LegacyVerificarExistenciaResponse = IVerificarExistenciaCertificadoResponse & {
+    exists?: boolean;
+};
+
+const normalizarRespostaExistencia = (
+    response: LegacyVerificarExistenciaResponse
+): IVerificarExistenciaCertificadoResponse => ({
+    existe: response.existe === true || response.exists === true,
+    certificado: response.certificado ?? null,
+});
 
 const CertificadoService = {
     /**
@@ -50,30 +63,48 @@ const CertificadoService = {
         }
     },
 
+    /**
+     * Verifica apenas se o par código do certificado + identificação da SAF já existe.
+     * Este método não persiste dados.
+     */
     async verificarExistenciaPorCodigoESaf(
         codigo: string,
         saf: string
     ): Promise<IVerificarExistenciaCertificadoResponse> {
-        const response = await api.get<IVerificarExistenciaCertificadoResponse>(
+        const response = await api.get<LegacyVerificarExistenciaResponse>(
             `${BASE_URL}/existe`,
             {
                 params: {
                     codigo,
-                    saf, // aqui é a identificacao da SAF (ex: "2024")
+                    saf,
                 },
             }
         );
 
-        return response.data;
+        return normalizarRespostaExistencia(response.data);
     },
 
     /**
-     * Cria um novo certificado.
+     * Cria um novo certificado com a primeira distribuição de SAF.
      */
     async criarCertificado(
         payload: ICreateCertificadoDto
     ): Promise<ICertificado> {
         const response = await api.post<ICertificado>(BASE_URL, payload);
+        return response.data;
+    },
+
+    /**
+     * Anexa uma nova SAF a um certificado já existente.
+     */
+    async adicionarSafAoCertificado(
+        certificadoId: string,
+        payload: ICreateCertificadoSafDto
+    ): Promise<ICertificado | ICertificadoSaf> {
+        const response = await api.post<ICertificado | ICertificadoSaf>(
+            `${BASE_URL}/${certificadoId}/safs`,
+            payload
+        );
         return response.data;
     },
 
